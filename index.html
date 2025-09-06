@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Charging Time Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .lang-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .lang-toggle:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .lang-toggle span {
+            font-weight: 500;
+        }
+
+        .lang-toggle .flag {
+            font-size: 16px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #555;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group input {
+            flex: 1;
+        }
+
+        .unit {
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .percentage-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 5px;
+        }
+
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .result-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 30px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .result-box.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .result-title {
+            font-size: 16px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        .result-time {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .result-details {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .presets {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .presets h3 {
+            color: #555;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .preset-btn {
+            background: #f0f0f0;
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .preset-btn:hover {
+            background: #e8e8e8;
+            border-color: #d0d0d0;
+        }
+
+        .error-message {
+            color: #e53e3e;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .info-box {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 5px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .efficiency-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .efficiency-value {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .toggle-container {
+            display: flex;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+
+        .toggle-option {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .toggle-option.active {
+            background: #667eea;
+            color: white;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .preset-buttons {
+                grid-template-columns: 1fr;
+            }
+
+            .lang-toggle {
+                top: 15px;
+                right: 15px;
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+
+            .lang-toggle .flag {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="lang-toggle" onclick="toggleLanguage()">
+        <span class="flag" id="currentFlag">🇺🇸</span>
+        <span id="currentLang">EN</span>
+    </button>
+
+    <div class="container">
+        <h1 id="pageTitle">⚡ EV Charging Time Calculator</h1>
+        <p class="subtitle" id="pageSubtitle">Calculate how long it will take to charge your electric vehicle</p>
+
+        <form id="chargingForm">
+            <div class="form-group">
+                <label for="batterySize" id="batteryLabel">Battery Size</label>
+                <div class="input-group">
+                    <input type="number" id="batterySize" step="0.1" min="1" max="200" value="60" required>
+                    <span class="unit">kWh</span>
+                </div>
+                <div class="error-message" id="batteryError">Please enter a valid battery size</div>
+            </div>
+
+            <div class="form-group">
+                <label id="chargeLevelsLabel">Charge Levels</label>
+                <div class="percentage-group">
+                    <div>
+                        <label for="currentCharge" id="currentLabel" style="font-size: 12px; margin-bottom: 5px;">Current</label>
+                        <div class="input-group">
+                            <input type="number" id="currentCharge" step="1" min="0" max="100" value="20" required>
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="targetCharge" id="targetLabel" style="font-size: 12px; margin-bottom: 5px;">Target</label>
+                        <div class="input-group">
+                            <input type="number" id="targetCharge" step="1" min="1" max="100" value="80" required>
+                            <span class="unit">%</span>
+                        </div>
+                        <button type="button" class="btn" id="setTo100Btn" onclick="setTargetTo100()">Set to 100%</button>
+                    </div>
+                </div>
+                <div class="error-message" id="chargeError">Target charge must be higher than current charge</div>
+            </div>
+
+            <div class="form-group">
+                <label id="chargingTypeLabel">Charging Type</label>
+                <div class="toggle-container">
+                    <div class="toggle-option active" id="acToggle" onclick="setChargingType('ac')">AC Charging</div>
+                    <div class="toggle-option" id="dcToggle" onclick="setChargingType('dc')">DC Charging</div>
+                </div>
+                <div class="info-box" id="chargingTypeInfo">
+                    AC charging (home/work) has efficiency losses (85-90%). DC charging (public stations) has minimal losses (95-98%).
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="chargeRate" id="chargeRateLabel">Charging Rate</label>
+                <div class="input-group">
+                    <input type="number" id="chargeRate" step="0.1" min="0.1" max="350" value="7.4" required>
+                    <span class="unit" id="chargeRateUnit">kW (supplied)</span>
+                </div>
+                <div class="error-message" id="rateError">Please enter a valid charging rate</div>
+            </div>
+
+            <div class="form-group">
+                <label for="efficiency" id="efficiencyLabel">Charging Efficiency</label>
+                <div class="input-group">
+                    <input type="number" id="efficiency" step="1" min="70" max="98" value="85" required>
+                    <span class="unit">%</span>
+                </div>
+                <div class="info-box">
+                    <div class="efficiency-info">
+                        <span id="effectivePowerLabel">Effective power:</span> <span class="efficiency-value" id="effectivePower">6.3 kW</span>
+                    </div>
+                    <span id="efficiencyInfoText">This accounts for energy lost during charging. Automatically adjusted based on charging type.</span>
+                </div>
+            </div>
+        </form>
+
+        <div class="result-box" id="resultBox">
+            <div class="result-title" id="resultTitle">Estimated Charging Time</div>
+            <div class="result-time" id="resultTime">--:--</div>
+            <div class="result-details" id="resultDetails">-- kWh needed</div>
+        </div>
+
+        <div class="presets">
+            <h3 id="presetsTitle">Quick Presets</h3>
+            <div class="preset-buttons">
+                <button class="preset-btn" id="preset1" onclick="setPreset(40, 7.4, 'ac')">Home Charger<br><small>40 kWh @ 7.4 kW AC</small></button>
+                <button class="preset-btn" id="preset2" onclick="setPreset(60, 50, 'dc')">Fast Charger<br><small>60 kWh @ 50 kW DC</small></button>
+                <button class="preset-btn" id="preset3" onclick="setPreset(75, 150, 'dc')">Rapid Charger<br><small>75 kWh @ 150 kW DC</small></button>
+                <button class="preset-btn" id="preset4" onclick="setPreset(100, 250, 'dc')">Ultra Fast<br><small>100 kWh @ 250 kW DC</small></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Translations
+        const translations = {
+            en: {
+                pageTitle: "⚡ EV Charging Time Calculator",
+                pageSubtitle: "Calculate how long it will take to charge your electric vehicle",
+                batteryLabel: "Battery Size",
+                chargeLevelsLabel: "Charge Levels",
+                currentLabel: "Current",
+                targetLabel: "Target",
+                setTo100Btn: "Set to 100%",
+                chargingTypeLabel: "Charging Type",
+                acToggle: "AC Charging",
+                dcToggle: "DC Charging",
+                chargingTypeInfo: "AC charging (home/work) has efficiency losses (85-90%). DC charging (public stations) has minimal losses (95-98%).",
+                chargeRateLabel: "Charging Rate",
+                chargeRateUnit: "kW (supplied)",
+                efficiencyLabel: "Charging Efficiency",
+                effectivePowerLabel: "Effective power:",
+                efficiencyInfoText: "This accounts for energy lost during charging. Automatically adjusted based on charging type.",
+                resultTitle: "Estimated Charging Time",
+                resultDetails: "kWh needed",
+                presetsTitle: "Quick Presets",
+                preset1: "Home Charger<br><small>40 kWh @ 7.4 kW AC</small>",
+                preset2: "Fast Charger<br><small>60 kWh @ 50 kW DC</small>",
+                preset3: "Rapid Charger<br><small>75 kWh @ 150 kW DC</small>",
+                preset4: "Ultra Fast<br><small>100 kWh @ 250 kW DC</small>",
+                batteryError: "Please enter a valid battery size",
+                chargeError: "Target charge must be higher than current charge",
+                rateError: "Please enter a valid charging rate"
+            },
+            es: {
+                pageTitle: "⚡ Calculadora de Tiempo de Carga para EV",
+                pageSubtitle: "Calcula cuánto tiempo tomará cargar tu vehículo eléctrico",
+                batteryLabel: "Tamaño de la Batería",
+                chargeLevelsLabel: "Niveles de Carga",
+                currentLabel: "Actual",
+                targetLabel: "Objetivo",
+                setTo100Btn: "Establecer en 100%",
+                chargingTypeLabel: "Tipo de Carga",
+                acToggle: "Carga AC",
+                dcToggle: "Carga DC",
+                chargingTypeInfo: "La carga AC (hogar/trabajo) tiene pérdidas de eficiencia (85-90%). La carga DC (estaciones públicas) tiene pérdidas mínimas (95-98%).",
+                chargeRateLabel: "Velocidad de Carga",
+                chargeRateUnit: "kW (suministrado)",
+                efficiencyLabel: "Eficiencia de Carga",
+                effectivePowerLabel: "Potencia efectiva:",
+                efficiencyInfoText: "Esto tiene en cuenta la energía perdida durante la carga. Se ajusta automáticamente según el tipo de carga.",
+                resultTitle: "Tiempo Estimado de Carga",
+                resultDetails: "kWh necesarios",
+                presetsTitle: "Configuraciones Rápidas",
+                preset1: "Cargador Doméstico<br><small>40 kWh @ 7.4 kW AC</small>",
+                preset2: "Cargador Rápido<br><small>60 kWh @ 50 kW DC</small>",
+                preset3: "Cargador Ultra Rápido<br><small>75 kWh @ 150 kW DC</small>",
+                preset4: "Cargador Ultra Rápido Plus<br><small>100 kWh @ 250 kW DC</small>",
+                batteryError: "Por favor ingrese un tamaño de batería válido",
+                chargeError: "La carga objetivo debe ser mayor que la carga actual",
+                rateError: "Por favor ingrese una velocidad de carga válida"
+            }
+        };
+
+        // Current language
+        let currentLang = 'en';
+
+        // Get all input elements
+        const batterySizeInput = document.getElementById('batterySize');
+        const currentChargeInput = document.getElementById('currentCharge');
+        const targetChargeInput = document.getElementById('targetCharge');
+        const chargeRateInput = document.getElementById('chargeRate');
+        const efficiencyInput = document.getElementById('efficiency');
+        const effectivePowerSpan = document.getElementById('effectivePower');
+        const resultBox = document.getElementById('resultBox');
+        const resultTime = document.getElementById('resultTime');
+        const resultDetails = document.getElementById('resultDetails');
+        const acToggle = document.getElementById('acToggle');
+        const dcToggle = document.getElementById('dcToggle');
+
+        // Error message elements
+        const batteryError = document.getElementById('batteryError');
+        const chargeError = document.getElementById('chargeError');
+        const rateError = document.getElementById('rateError');
+
+        // Current charging type
+        let currentChargingType = 'ac';
+
+        // Add event listeners for real-time calculation
+        [batterySizeInput, currentChargeInput, targetChargeInput, chargeRateInput, efficiencyInput].forEach(input => {
+            input.addEventListener('input', calculateChargingTime);
+        });
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'es' : 'en';
+            updateLanguage();
+            localStorage.setItem('language', currentLang);
+        }
+
+        function updateLanguage() {
+            const t = translations[currentLang];
+            
+            // Update page elements
+            document.getElementById('pageTitle').textContent = t.pageTitle;
+            document.getElementById('pageSubtitle').textContent = t.pageSubtitle;
+            document.getElementById('batteryLabel').textContent = t.batteryLabel;
+            document.getElementById('chargeLevelsLabel').textContent = t.chargeLevelsLabel;
+            document.getElementById('currentLabel').textContent = t.currentLabel;
+            document.getElementById('targetLabel').textContent = t.targetLabel;
+            document.getElementById('setTo100Btn').textContent = t.setTo100Btn;
+            document.getElementById('chargingTypeLabel').textContent = t.chargingTypeLabel;
+            document.getElementById('acToggle').textContent = t.acToggle;
+            document.getElementById('dcToggle').textContent = t.dcToggle;
+            document.getElementById('chargingTypeInfo').textContent = t.chargingTypeInfo;
+            document.getElementById('chargeRateLabel').textContent = t.chargeRateLabel;
+            document.getElementById('chargeRateUnit').textContent = t.chargeRateUnit;
+            document.getElementById('efficiencyLabel').textContent = t.efficiencyLabel;
+            document.getElementById('effectivePowerLabel').textContent = t.effectivePowerLabel;
+            document.getElementById('efficiencyInfoText').textContent = t.efficiencyInfoText;
+            document.getElementById('resultTitle').textContent = t.resultTitle;
+            document.getElementById('presetsTitle').textContent = t.presetsTitle;
+            
+            // Update error messages
+            batteryError.textContent = t.batteryError;
+            chargeError.textContent = t.chargeError;
+            rateError.textContent = t.rateError;
+            
+            // Update presets
+            document.getElementById('preset1').innerHTML = t.preset1;
+            document.getElementById('preset2').innerHTML = t.preset2;
+            document.getElementById('preset3').innerHTML = t.preset3;
+            document.getElementById('preset4').innerHTML = t.preset4;
+            
+            // Update language toggle
+            document.getElementById('currentFlag').textContent = currentLang === 'en' ? '🇺🇸' : '🇪🇸';
+            document.getElementById('currentLang').textContent = currentLang.toUpperCase();
+            
+            // Update HTML lang attribute
+            document.documentElement.lang = currentLang;
+            
+            // Recalculate to update result details
+            calculateChargingTime();
+        }
+
+        function setChargingType(type) {
+            currentChargingType = type;
+            
+            if (type === 'ac') {
+                acToggle.classList.add('active');
+                dcToggle.classList.remove('active');
+                efficiencyInput.value = 85; // Default AC efficiency
+            } else {
+                dcToggle.classList.add('active');
+                acToggle.classList.remove('active');
+                efficiencyInput.value = 97; // Default DC efficiency
+            }
+            
+            calculateChargingTime();
+        }
+
+        function calculateChargingTime() {
+            // Hide all error messages
+            [batteryError, chargeError, rateError].forEach(error => error.style.display = 'none');
+
+            // Get values
+            const batterySize = parseFloat(batterySizeInput.value);
+            const currentCharge = parseFloat(currentChargeInput.value);
+            const targetCharge = parseFloat(targetChargeInput.value);
+            const chargeRate = parseFloat(chargeRateInput.value);
+            const efficiency = parseFloat(efficiencyInput.value) / 100;
+
+            // Update effective power display
+            const effectivePower = chargeRate * efficiency;
+            effectivePowerSpan.textContent = `${effectivePower.toFixed(1)} kW`;
+
+            // Validate inputs
+            let hasError = false;
+
+            if (!batterySize || batterySize < 1 || batterySize > 200) {
+                batteryError.style.display = 'block';
+                hasError = true;
+            }
+
+            if (!currentCharge || currentCharge < 0 || currentCharge > 100) {
+                currentChargeInput.value = Math.max(0, Math.min(100, currentCharge || 0));
+            }
+
+            if (!targetCharge || targetCharge < 1 || targetCharge > 100) {
+                targetChargeInput.value = Math.max(1, Math.min(100, targetCharge || 100));
+            }
+
+            if (targetCharge <= currentCharge) {
+                chargeError.style.display = 'block';
+                hasError = true;
+            }
+
+            if (!chargeRate || chargeRate < 0.1 || chargeRate > 350) {
+                rateError.style.display = 'block';
+                hasError = true;
+            }
+
+            if (hasError) {
+                resultBox.classList.remove('show');
+                return;
+            }
+
+            // Calculate energy needed
+            const energyNeeded = ((targetCharge - currentCharge) / 100) * batterySize;
+
+            // Calculate time in hours using effective power (after efficiency losses)
+            const timeInHours = energyNeeded / effectivePower;
+
+            // Convert to hours and minutes
+            const hours = Math.floor(timeInHours);
+            const minutes = Math.round((timeInHours - hours) * 60);
+
+            // Format the result
+            let timeString = '';
+            if (hours > 0) {
+                timeString = `${hours}h ${minutes}m`;
+            } else {
+                timeString = `${minutes}m`;
+            }
+
+            // Update the result
+            resultTime.textContent = timeString;
+            const t = translations[currentLang];
+            resultDetails.textContent = `${energyNeeded.toFixed(1)} ${t.resultDetails}`;
+            resultBox.classList.add('show');
+        }
+
+        function setTargetTo100() {
+            targetChargeInput.value = 100;
+            calculateChargingTime();
+        }
+
+        function setPreset(battery, rate, type) {
+            batterySizeInput.value = battery;
+            chargeRateInput.value = rate;
+            setChargingType(type);
+            calculateChargingTime();
+        }
+
+        // Initialize language
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for saved language preference
+            const savedLang = localStorage.getItem('language');
+            if (savedLang && (savedLang === 'en' || savedLang === 'es')) {
+                currentLang = savedLang;
+                updateLanguage();
+            }
+            
+            // Initial calculation
+            calculateChargingTime();
+        });
+    </script>
+</body>
+</html>
