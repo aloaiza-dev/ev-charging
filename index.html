@@ -89,6 +89,16 @@
             font-size: 16px;
         }
 
+        /* Optional: only when installed (standalone) */
+        html.standalone .lang-toggle {
+            top: calc(env(safe-area-inset-top) + 10px);
+        }
+
+        /* Optional: tiny screens */
+        @media (max-height: 700px) {
+            .lang-toggle { top: calc(env(safe-area-inset-top) + 10px); }
+        }
+
         .container {
             background: #fff;
             border: 1px solid rgba(255,255,255,0.25);
