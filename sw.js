@@ -1,12 +1,13 @@
 // super-minimal offline cache for shell + icons
 const CACHE = 'ev-calc-v1';
 const ASSETS = [
-  '',                 // your index
-  'manifest.webmanifest',
-  'icons/ev-152.png',
-  'icons/ev-180.png',
-  'icons/ev-192.png',
-  'icons/ev-512.png'
+  './',                        // index
+  './manifest.webmanifest',
+  './icons/ev-120.png',
+  './icons/ev-152.png',
+  './icons/ev-180.png',
+  './icons/ev-192.png',
+  './icons/ev-512.png'
 ];
 
 self.addEventListener('install', e => {
