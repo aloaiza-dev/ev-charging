@@ -910,6 +910,13 @@
             </div>
             
             <div class="menu-section">
+                <div class="menu-section-title" id="supportTitle">Support This Project</div>
+                <div class="menu-item" onclick="openDonationLink()">
+                    <img src="./icons/coffee-icon.svg" alt="Buy me a coffee" class="menu-item-icon-svg">
+                </div>
+            </div>
+
+            <div class="menu-section">
                 <div class="menu-section-title" id="dataManagementTitle">Data Management</div>
                 
                 <div class="btn-group">
@@ -931,6 +938,8 @@
                     This will permanently delete all your charging sessions. Consider exporting your data first if you want to keep a backup.
                 </div>
             </div>
+
+            
         </div>
     </div>
 
@@ -1142,12 +1151,29 @@
 
         // Initialize IndexedDB
         function initIndexedDB() {
+            // Check if IndexedDB is supported
+            if (!window.indexedDB) {
+                console.error("IndexedDB not supported");
+                showNotification("IndexedDB not supported. Using localStorage as fallback.", true);
+                loadFromLocalStorage();
+                return;
+            }
+
             const request = indexedDB.open(dbName, dbVersion);
             
             request.onerror = function(event) {
-                console.error("Database error:", event.target.error);
+                const error = event.target.error;
+                console.error("Database error:", error);
+                
+                // If the error is that the database doesn't exist, we don't show an error
+                // because the onupgradeneeded event will handle creating it
+                if (error.name === 'NotFoundError') {
+                    console.log("Database not found, will be created");
+                    return; // Don't show error message, database will be created
+                }
+                
+                // For other errors, show the notification
                 showNotification("Database error. Using localStorage as fallback.", true);
-                // Fallback to localStorage if IndexedDB fails
                 loadFromLocalStorage();
             };
             
@@ -1155,10 +1181,12 @@
                 db = event.target.result;
                 console.log("Database opened successfully");
                 loadSessions();
+                loadGlobalRate(); // Load the global rate
             };
             
             request.onupgradeneeded = function(event) {
                 db = event.target.result;
+                console.log("Database upgrade needed, creating object stores");
                 
                 // Create an object store to store sessions
                 if (!db.objectStoreNames.contains(objectStoreName)) {
@@ -1168,13 +1196,25 @@
                     objectStore.createIndex("date", "date", { unique: false });
                 }
                 
+                // Create an object store for settings
+                if (!db.objectStoreNames.contains("settings")) {
+                    db.createObjectStore("settings", { keyPath: "key" });
+                }
+                
                 // Migrate data from localStorage if available
                 migrateFromLocalStorage();
+            };
+            
+            request.onblocked = function(event) {
+                console.error("Database blocked:", event);
+                showNotification("Database access blocked. Using localStorage as fallback.", true);
+                loadFromLocalStorage();
             };
         }
 
         // Migrate data from localStorage to IndexedDB
         function migrateFromLocalStorage() {
+            // Migrate sessions
             const savedSessions = localStorage.getItem('evSessions');
             if (savedSessions) {
                 try {
@@ -1189,13 +1229,13 @@
                         });
                         
                         transaction.oncomplete = function() {
-                            console.log("Data migrated from localStorage to IndexedDB");
+                            console.log("Sessions migrated from localStorage to IndexedDB");
                             // Clear localStorage after successful migration
                             localStorage.removeItem('evSessions');
                         };
                     }
                 } catch (e) {
-                    console.error("Error migrating data from localStorage:", e);
+                    console.error("Error migrating sessions from localStorage:", e);
                 }
             }
             
@@ -1203,8 +1243,17 @@
             const savedGlobalRate = localStorage.getItem('globalRate');
             if (savedGlobalRate) {
                 globalRate = parseFloat(savedGlobalRate);
-                globalRateInput.value = globalRate;
-                localStorage.removeItem('globalRate');
+                
+                // Save to IndexedDB
+                const transaction = db.transaction(["settings"], "readwrite");
+                const settingsStore = transaction.objectStore("settings");
+                settingsStore.put({ key: "globalRate", value: globalRate });
+                
+                transaction.oncomplete = function() {
+                    console.log("Global rate migrated from localStorage to IndexedDB");
+                    // Clear localStorage after successful migration
+                    localStorage.removeItem('globalRate');
+                };
             }
         }
 
@@ -1371,7 +1420,35 @@
         }
 
         function saveGlobalSettings() {
-            updateGlobalRate();
+            updateGlobalRate(); // This updates the globalRate variable
+            
+            // Save to IndexedDB
+            if (db) {
+                try {
+                    const transaction = db.transaction(["settings"], "readwrite");
+                    const settingsStore = transaction.objectStore("settings");
+                    
+                    // Save the global rate with key "globalRate"
+                    const request = settingsStore.put({ key: "globalRate", value: globalRate });
+                    
+                    request.onsuccess = function() {
+                        console.log("Global rate saved to IndexedDB");
+                    };
+                    
+                    request.onerror = function(event) {
+                        console.error("Error saving global rate to IndexedDB:", event.target.error);
+                        // Fallback to localStorage
+                        localStorage.setItem('globalRate', globalRate.toString());
+                    };
+                } catch (e) {
+                    console.error("Exception when saving to IndexedDB:", e);
+                    // Fallback to localStorage
+                    localStorage.setItem('globalRate', globalRate.toString());
+                }
+            } else {
+                // Fallback to localStorage if IndexedDB is not available
+                localStorage.setItem('globalRate', globalRate.toString());
+            }
             
             // Show success feedback
             const btn = document.getElementById('saveSettingsBtn');
@@ -1383,6 +1460,100 @@
                 btn.textContent = originalText;
                 btn.style.background = '';
             }, 1500);
+        }
+
+        function ensureDatabaseExists() {
+            if (!db) {
+                // If database is not initialized, try to initialize it
+                initIndexedDB();
+                return;
+            }
+            
+            // Check if the settings object store exists
+            if (!db.objectStoreNames.contains("settings")) {
+                console.log("Settings object store not found, creating it");
+                
+                // We need to upgrade the database version to create the missing object store
+                const currentVersion = db.version;
+                db.close();
+                
+                const request = indexedDB.open(dbName, currentVersion + 1);
+                
+                request.onerror = function(event) {
+                    console.error("Error upgrading database:", event.target.error);
+                    showNotification("Database error. Using localStorage as fallback.", true);
+                };
+                
+                request.onsuccess = function(event) {
+                    db = event.target.result;
+                    console.log("Database upgraded successfully");
+                    loadGlobalRate();
+                };
+                
+                request.onupgradeneeded = function(event) {
+                    db = event.target.result;
+                    
+                    // Create the settings object store if it doesn't exist
+                    if (!db.objectStoreNames.contains("settings")) {
+                        db.createObjectStore("settings", { keyPath: "key" });
+                    }
+                };
+            }
+        }
+
+        function loadGlobalRate() {
+            if (db) {
+                const transaction = db.transaction(["settings"], "readonly");
+                const settingsStore = transaction.objectStore("settings");
+                
+                const request = settingsStore.get("globalRate");
+                
+                request.onsuccess = function(event) {
+                    if (event.target.result) {
+                        globalRate = event.target.result.value;
+                        globalRateInput.value = globalRate;
+                        console.log("Global rate loaded from IndexedDB:", globalRate);
+                    } else {
+                        // If not found in IndexedDB, try localStorage as fallback
+                        const savedGlobalRate = localStorage.getItem('globalRate');
+                        if (savedGlobalRate) {
+                            globalRate = parseFloat(savedGlobalRate);
+                            globalRateInput.value = globalRate;
+                            console.log("Global rate loaded from localStorage:", globalRate);
+                        } else {
+                            // Use default value if nothing is saved
+                            globalRate = 0.15;
+                            globalRateInput.value = globalRate;
+                            console.log("Using default global rate:", globalRate);
+                        }
+                    }
+                };
+                
+                request.onerror = function(event) {
+                    console.error("Error loading global rate from IndexedDB:", event.target.error);
+                    // Fallback to localStorage
+                    const savedGlobalRate = localStorage.getItem('globalRate');
+                    if (savedGlobalRate) {
+                        globalRate = parseFloat(savedGlobalRate);
+                        globalRateInput.value = globalRate;
+                    } else {
+                        // Use default value if nothing is saved
+                        globalRate = 0.15;
+                        globalRateInput.value = globalRate;
+                    }
+                };
+            } else {
+                // Fallback to localStorage if IndexedDB is not available
+                const savedGlobalRate = localStorage.getItem('globalRate');
+                if (savedGlobalRate) {
+                    globalRate = parseFloat(savedGlobalRate);
+                    globalRateInput.value = globalRate;
+                } else {
+                    // Use default value if nothing is saved
+                    globalRate = 0.15;
+                    globalRateInput.value = globalRate;
+                }
+            }
         }
 
         function addSession(e) {
@@ -1697,6 +1868,11 @@
             menuModal.style.display = 'none';
         }
 
+        function openDonationLink() {
+            window.open('https://www.buymeacoffee.com/yourusername', '_blank');
+            closeMenu();
+        }
+
         function exportData() {
             const data = {
                 sessions: sessions,
@@ -1856,6 +2032,24 @@
                 closeEditSessionModal();
             }
         };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for saved language preference
+            const savedLang = localStorage.getItem('language');
+            if (savedLang && (savedLang === 'en' || savedLang === 'es')) {
+                currentLang = savedLang;
+                updateLanguage();
+            }
+            
+            // Initialize IndexedDB
+            initIndexedDB();
+            
+            // Ensure database exists and has all necessary object stores
+            setTimeout(ensureDatabaseExists, 100);
+            
+            // Set today's date as default
+            sessionDateInput.valueAsDate = new Date();
+        });
     </script>
 </body>
 </html>
