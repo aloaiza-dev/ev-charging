@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="EV Tracker">
+
+    <!-- Solid color for Safari's top bar (light/dark aware) -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#667eea">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#4f46e5">
+
+    <!-- PWA basics -->
+    <link rel="manifest" href="./manifest.webmanifest">
+    <meta name="theme-color" content="#667eea">
+    <title>EV Charging Session Tracker</title>
+    
+    <!-- iOS Home Screen -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="EV Tracker">
+    <link rel="apple-touch-icon" sizes="180x180" href="./icons/ev-180.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="./icons/ev-152.png">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Fill behind the status bar (iOS notch) */
+        html {
+          height: 100%;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        /* Use dynamic viewport so iOS Safari doesn't leave gaps */
+        body {
+          min-height: 100dvh; /* instead of 100vh */
+          margin: 0;
+          padding: 20px;
+          display: flex;
+          align-items: flex-start; /* Changed from center to flex-start */
+          justify-content: center;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+
+          /* same gradient as html so the area under the status bar matches */
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+          /* Respect iOS safe areas when running as a standalone app */
+          padding-top: calc(20px + env(safe-area-inset-top));
+          padding-right: calc(20px + env(safe-area-inset-right));
+          padding-bottom: calc(20px + env(safe-area-inset-bottom));
+          padding-left: calc(20px + env(safe-area-inset-left));
+        }
+
+        .top-controls {
+            position: fixed;
+            top: calc(12px + env(safe-area-inset-top));
+            right: calc(12px + env(safe-area-inset-right));
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .lang-toggle {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .lang-toggle:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .lang-toggle span {
+            font-weight: 500;
+        }
+
+        .lang-toggle .flag {
+            font-size: 16px;
+        }
+
+        .menu-toggle {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .menu-toggle:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Optional: only when installed (standalone) */
+        html.standalone .top-controls {
+            top: calc(env(safe-area-inset-top) + 10px);
+        }
+
+        /* Optional: tiny screens */
+        @media (max-height: 700px) {
+            .top-controls { top: calc(env(safe-area-inset-top) + 10px); }
+        }
+
+        .container {
+            background: #fff;
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            margin-bottom: 30px; /* Added space at bottom for scrolling */
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .summary-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .summary-title {
+            font-size: 16px;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+
+        .summary-stats {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .summary-stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #555;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input[type="number"], input[type="date"], input[type="text"], select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        input[type="number"]:focus, input[type="date"]:focus, input[type="text"]:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group input, .input-group select {
+            flex: 1;
+        }
+
+        .unit {
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-danger {
+            background: #e53e3e;
+        }
+
+        .btn-danger:hover {
+            background: #c53030;
+            box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            width: auto;
+            margin-top: 0;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-group .btn {
+            flex: 1;
+            margin-top: 0;
+        }
+
+        .sessions-container {
+            margin-top: 30px;
+        }
+
+        .sessions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .sessions-title {
+            font-size: 18px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .sessions-count {
+            font-size: 14px;
+            color: #666;
+            background: #f0f0f0;
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+
+        .sessions-list {
+            max-height: 50vh; /* Changed to viewport height for better responsiveness */
+            overflow-y: auto;
+            padding-right: 5px; /* Add space for scrollbar */
+        }
+
+        /* Custom scrollbar for better mobile experience */
+        .sessions-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sessions-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .sessions-list::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+
+        .sessions-list::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        .month-group {
+            margin-bottom: 30px;
+        }
+
+        .month-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .month-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="3" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="2" fill="rgba(255,255,255,0.1)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .month-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .month-summary {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            z-index: 1;
+        }
+
+        .month-summary-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .month-summary-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .month-summary-label {
+            font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .session-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .session-item:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .session-date {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .session-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .session-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .session-energy {
+            font-weight: 500;
+        }
+
+        .session-cost {
+            font-weight: 500;
+            color: #4f46e5;
+        }
+
+        .session-rate {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px 0;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        .toggle-container {
+            display: flex;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .toggle-option {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .toggle-option.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .info-box {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 5px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .error-message {
+            color: #e53e3e;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .calculated-cost {
+            background: #f0f7ff;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            text-align: center;
+            font-size: 14px;
+            color: #4f46e5;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #48bb78;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 3000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .notification.show {
+            opacity: 1;
+        }
+
+        .notification.error {
+            background: #e53e3e;
+        }
+
+        .load-more-container {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .load-more-btn {
+            background: #f0f0f0;
+            color: #333;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .load-more-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .menu-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .menu-section-title {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .menu-item:hover {
+            background: #f0f0f0;
+            transform: translateY(-1px);
+        }
+
+        .menu-item-icon {
+            font-size: 18px;
+            margin-right: 12px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .menu-item-text {
+            font-size: 14px;
+            color: #333;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+            
+            .container {
+                padding: 25px 20px;
+                margin-bottom: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .lang-toggle {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+
+            .lang-toggle .flag {
+                font-size: 14px;
+            }
+
+            .summary-stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .sessions-list {
+                max-height: 40vh; /* Smaller height on mobile */
+            }
+            
+            .month-summary {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .month-title {
+                font-size: 18px;
+            }
+            
+            .month-summary-value {
+                font-size: 16px;
+            }
+        }
+
+        .home-btn {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .home-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* For very small screens */
+        @media (max-height: 600px) {
+            .sessions-list {
+                max-height: 30vh; /* Even smaller height on very small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-controls">
+          <button class="home-btn" onclick="goHome()">🏠</button>
+        <button class="menu-toggle" id="menuToggle" onclick="openMenu()">⚙️</button>
+        <button class="lang-toggle" onclick="toggleLanguage()">
+            <span class="flag" id="currentFlag">🇺🇸</span>
+            <span id="currentLang">EN</span>
+        </button>
+    </div>
+
+    <div class="container">
+        <h1 id="pageTitle">⚡ EV Charging Session Tracker</h1>
+        <p class="subtitle" id="pageSubtitle">Track your charging sessions and energy consumption</p>
+
+        <div class="summary-container">
+            <div class="summary-title" id="summaryTitle">Charging Summary</div>
+            <div class="summary-stats">
+                <div class="summary-stat">
+                    <div class="stat-value" id="totalEnergy">0</div>
+                    <div class="stat-label" id="totalEnergyLabel">kWh Total</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="stat-value" id="totalCost">$0.00</div>
+                    <div class="stat-label" id="totalCostLabel">Total Cost</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="stat-value" id="avgCost">$0.00</div>
+                    <div class="stat-label" id="avgCostLabel">Avg Cost/kWh</div>
+                </div>
+            </div>
+        </div>
+
+        <form id="sessionForm">
+            <div class="form-group">
+                <label for="sessionDate" id="dateLabel">Date</label>
+                <input type="date" id="sessionDate" required>
+            </div>
+
+            <div class="form-group">
+                <label for="sessionEnergy" id="energyLabel">Energy Consumed</label>
+                <div class="input-group">
+                    <input type="number" id="sessionEnergy" step="0.1" min="0.1" required>
+                    <span class="unit">kWh</span>
+                </div>
+                <div class="error-message" id="energyError">Please enter a valid energy amount</div>
+            </div>
+
+            <div class="form-group">
+                <label id="costMethodLabel">Cost Calculation Method</label>
+                <div class="toggle-container">
+                    <div class="toggle-option active" id="globalCostToggle" onclick="setCostMethod('global')">Use Global Rate</div>
+                    <div class="toggle-option" id="customCostToggle" onclick="setCostMethod('custom')">Custom Cost</div>
+                </div>
+            </div>
+
+            <div class="form-group" id="customCostGroup">
+                <label for="sessionRate" id="rateLabel">Cost per kWh</label>
+                <div class="input-group">
+                    <input type="number" id="sessionRate" step="0.01" min="0" disabled>
+                    <span class="unit">$</span>
+                </div>
+                <div class="error-message" id="rateError">Please enter a valid rate</div>
+            </div>
+
+            <button type="submit" class="btn" id="addSessionBtn">Add Charging Session</button>
+        </form>
+
+        <div class="sessions-container">
+            <div class="sessions-header">
+                <h3 class="sessions-title" id="sessionsTitle">Charging Sessions</h3>
+                <div class="sessions-count" id="sessionsCount">0 sessions</div>
+            </div>
+            
+            <div class="sessions-list" id="sessionsList">
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔋</div>
+                    <div id="noSessionsText">No charging sessions recorded yet</div>
+                </div>
+            </div>
+            
+            <div class="load-more-container" id="loadMoreContainer" style="display: none;">
+                <button class="load-more-btn" id="loadMoreBtn" onclick="loadMoreSessions()">Load More</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Modal -->
+    <div class="modal" id="menuModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="menuModalTitle">Settings & Options</div>
+                <button class="modal-close" onclick="closeMenu()">&times;</button>
+            </div>
+            
+            <div class="menu-section">
+                <div class="menu-section-title" id="globalSettingsTitle">Global Settings</div>
+                
+                <div class="form-group">
+                    <label for="globalRate" id="globalRateLabel">Default Cost per kWh</label>
+                    <div class="input-group">
+                        <input type="number" id="globalRate" step="0.01" min="0" value="0.15">
+                        <span class="unit">$</span>
+                    </div>
+                    <div class="info-box" id="rateInfoText">
+                        This rate will be used when "Use Global Rate" is selected for a charging session.
+                    </div>
+                </div>
+                
+                <button type="button" class="btn btn-secondary" id="saveSettingsBtn" onclick="saveGlobalSettings()">Save Settings</button>
+            </div>
+            
+            <div class="menu-section">
+                <div class="menu-section-title" id="dataManagementTitle">Data Management</div>
+                
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" id="exportBtn" onclick="exportData()">Export Data</button>
+                    <button type="button" class="btn btn-secondary" id="importBtn" onclick="document.getElementById('importFile').click()">Import Data</button>
+                </div>
+                
+                <input type="file" id="importFile" class="file-input" accept=".json" onchange="importData(event)">
+                
+                <div class="info-box" id="dataInfoText">
+                    Export your data to back it up or import previously exported data.
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <button type="button" class="btn btn-danger" id="startOverBtn" onclick="startOver()">Start Over</button>
+                </div>
+                
+                <div class="info-box" id="startOverWarning" style="background-color: #fff5f5; border-left-color: #e53e3e;">
+                    This will permanently delete all your charging sessions. Consider exporting your data first if you want to keep a backup.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Session Modal -->
+    <div class="modal" id="editSessionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="editModalTitle">Edit Charging Session</div>
+                <button class="modal-close" onclick="closeEditSessionModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="editSessionDate" id="editDateLabel">Date</label>
+                <input type="date" id="editSessionDate" required>
+            </div>
+            <div class="form-group">
+                <label for="editSessionEnergy" id="editEnergyLabel">Energy Consumed</label>
+                <div class="input-group">
+                    <input type="number" id="editSessionEnergy" step="0.1" min="0.1" required>
+                    <span class="unit">kWh</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="editSessionRate" id="editRateLabel">Cost per kWh</label>
+                <div class="input-group">
+                    <input type="number" id="editSessionRate" step="0.01" min="0" required>
+                    <span class="unit">$</span>
+                </div>
+                <div class="calculated-cost" id="calculatedCost">
+                    Total Cost: $0.00
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEditSessionModal()" id="cancelEditBtn">Cancel</button>
+                <button class="btn btn-danger" onclick="deleteSession()" id="deleteSessionBtn">Delete</button>
+                <button class="btn" onclick="updateSession()" id="updateSessionBtn">Update</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Translations
+        const translations = {
+            en: {
+                pageTitle: "⚡ EV Charging Session Tracker",
+                pageSubtitle: "Track your charging sessions and energy consumption",
+                summaryTitle: "Charging Summary",
+                totalEnergyLabel: "kWh Total",
+                totalCostLabel: "Total Cost",
+                avgCostLabel: "Avg Cost/kWh",
+                dateLabel: "Date",
+                energyLabel: "Energy Consumed",
+                costMethodLabel: "Cost Calculation Method",
+                globalCostToggle: "Use Global Rate",
+                customCostToggle: "Custom Cost",
+                rateLabel: "Cost per kWh",
+                addSessionBtn: "Add Charging Session",
+                globalRateLabel: "Default Cost per kWh",
+                rateInfoText: "This rate will be used when \"Use Global Rate\" is selected for a charging session.",
+                saveSettingsBtn: "Save Settings",
+                dataManagementTitle: "Data Management",
+                exportBtn: "Export Data",
+                importBtn: "Import Data",
+                dataInfoText: "Export your data to back it up or import previously exported data.",
+                sessionsTitle: "Charging Sessions",
+                noSessionsText: "No charging sessions recorded yet",
+                editModalTitle: "Edit Charging Session",
+                editDateLabel: "Date",
+                editEnergyLabel: "Energy Consumed",
+                editRateLabel: "Cost per kWh",
+                cancelEditBtn: "Cancel",
+                deleteSessionBtn: "Delete",
+                updateSessionBtn: "Update",
+                energyError: "Please enter a valid energy amount",
+                rateError: "Please enter a valid rate",
+                exportSuccess: "Data exported successfully!",
+                importSuccess: "Data imported successfully!",
+                importError: "Error importing data. Please check the file format.",
+                deleteConfirm: "Are you sure you want to delete this session?",
+                loadMoreBtn: "Load More",
+                sessionsCount: "sessions",
+                menuModalTitle: "Settings & Options",
+                globalSettingsTitle: "Global Settings",
+                monthSummaryLabel: "Monthly Summary",
+                monthEnergyLabel: "kWh",
+                monthCostLabel: "Cost",
+                monthAvgLabel: "Avg/kWh",
+                startOverBtn: "Start Over",
+                startOverConfirm: "Are you sure you want to delete all charging sessions? This action cannot be undone.",
+                startOverSuccess: "All charging sessions have been deleted.",
+                startOverWarning: "This will permanently delete all your charging sessions. Consider exporting your data first if you want to keep a backup.",
+                homeBtnTooltip: "Go to Homepage"
+            },
+            es: {
+                pageTitle: "⚡ Seguimiento de Sesiones de Carga EV",
+                pageSubtitle: "Registra tus sesiones de carga y consumo de energía",
+                summaryTitle: "Resumen de Carga",
+                totalEnergyLabel: "kWh Total",
+                totalCostLabel: "Costo Total",
+                avgCostLabel: "Costo Promedio/kWh",
+                dateLabel: "Fecha",
+                energyLabel: "Energía Consumida",
+                costMethodLabel: "Método de Cálculo de Costo",
+                globalCostToggle: "Usar Tarifa Global",
+                customCostToggle: "Costo Personalizado",
+                rateLabel: "Costo por kWh",
+                addSessionBtn: "Agregar Sesión de Carga",
+                globalRateLabel: "Costo Predeterminado por kWh",
+                rateInfoText: "Esta tarifa se utilizará cuando se seleccione \"Usar Tarifa Global\" para una sesión de carga.",
+                saveSettingsBtn: "Guardar Configuración",
+                dataManagementTitle: "Gestión de Datos",
+                exportBtn: "Exportar Datos",
+                importBtn: "Importar Datos",
+                dataInfoText: "Exporta tus datos para respaldarlos o importa datos previamente exportados.",
+                sessionsTitle: "Sesiones de Carga",
+                noSessionsText: "No hay sesiones de carga registradas aún",
+                editModalTitle: "Editar Sesión de Carga",
+                editDateLabel: "Fecha",
+                editEnergyLabel: "Energía Consumida",
+                editRateLabel: "Costo por kWh",
+                cancelEditBtn: "Cancelar",
+                deleteSessionBtn: "Eliminar",
+                updateSessionBtn: "Actualizar",
+                energyError: "Por favor ingrese una cantidad de energía válida",
+                rateError: "Por favor ingrese una tarifa válida",
+                exportSuccess: "¡Datos exportados exitosamente!",
+                importSuccess: "¡Datos importados exitosamente!",
+                importError: "Error al importar datos. Por favor verifique el formato del archivo.",
+                deleteConfirm: "¿Está seguro de que desea eliminar esta sesión?",
+                loadMoreBtn: "Cargar Más",
+                sessionsCount: "sesiones",
+                menuModalTitle: "Configuración y Opciones",
+                globalSettingsTitle: "Configuración Global",
+                monthSummaryLabel: "Resumen Mensual",
+                monthEnergyLabel: "kWh",
+                monthCostLabel: "Costo",
+                monthAvgLabel: "Prom/kWh",
+                startOverBtn: "Reiniciar",
+                startOverConfirm: "¿Está seguro de que desea eliminar todas las sesiones de carga? Esta acción no se puede deshacer.",
+                startOverSuccess: "Todas las sesiones de carga han sido eliminadas.",
+                startOverWarning: "Esto eliminará permanentemente todas sus sesiones de carga. Considere exportar sus datos primero si desea mantener una copia de seguridad.",
+                homeBtnTooltip: "Ir a la página de inicio"
+            }
+        };
+
+        // Current language
+        let currentLang = 'en';
+        
+        // Session management
+        let sessions = [];
+        let editingSessionId = null;
+        let costMethod = 'global'; // 'global' or 'custom'
+        let globalRate = 0.15; // Default cost per kWh
+        
+        // Pagination
+        let monthsPerPage = 3; // Show 3 months at a time
+        let currentPage = 1;
+        let displayedMonths = [];
+
+        // IndexedDB setup
+        let db;
+        const dbName = "EVChargingTrackerDB";
+        const dbVersion = 1;
+        const objectStoreName = "sessions";
+
+        // Get all input elements
+        const sessionDateInput = document.getElementById('sessionDate');
+        const sessionEnergyInput = document.getElementById('sessionEnergy');
+        const sessionRateInput = document.getElementById('sessionRate');
+        const globalRateInput = document.getElementById('globalRate');
+        const sessionsList = document.getElementById('sessionsList');
+        const sessionsCount = document.getElementById('sessionsCount');
+        const loadMoreContainer = document.getElementById('loadMoreContainer');
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        const menuModal = document.getElementById('menuModal');
+        const editSessionModal = document.getElementById('editSessionModal');
+        const editSessionDateInput = document.getElementById('editSessionDate');
+        const editSessionEnergyInput = document.getElementById('editSessionEnergy');
+        const editSessionRateInput = document.getElementById('editSessionRate');
+        const calculatedCostDiv = document.getElementById('calculatedCost');
+
+        // Summary elements
+        const totalEnergyElement = document.getElementById('totalEnergy');
+        const totalCostElement = document.getElementById('totalCost');
+        const avgCostElement = document.getElementById('avgCost');
+
+        // Toggle elements
+        const globalCostToggle = document.getElementById('globalCostToggle');
+        const customCostToggle = document.getElementById('customCostToggle');
+        const customCostGroup = document.getElementById('customCostGroup');
+
+        // Error message elements
+        const energyError = document.getElementById('energyError');
+        const rateError = document.getElementById('rateError');
+
+        // Notification element
+        const notification = document.getElementById('notification');
+
+        // Set today's date as default
+        sessionDateInput.valueAsDate = new Date();
+
+        // Add event listeners
+        document.getElementById('sessionForm').addEventListener('submit', addSession);
+        globalRateInput.addEventListener('input', updateGlobalRate);
+        editSessionEnergyInput.addEventListener('input', updateCalculatedCost);
+        editSessionRateInput.addEventListener('input', updateCalculatedCost);
+
+        // Initialize IndexedDB
+        function initIndexedDB() {
+            const request = indexedDB.open(dbName, dbVersion);
+            
+            request.onerror = function(event) {
+                console.error("Database error:", event.target.error);
+                showNotification("Database error. Using localStorage as fallback.", true);
+                // Fallback to localStorage if IndexedDB fails
+                loadFromLocalStorage();
+            };
+            
+            request.onsuccess = function(event) {
+                db = event.target.result;
+                console.log("Database opened successfully");
+                loadSessions();
+            };
+            
+            request.onupgradeneeded = function(event) {
+                db = event.target.result;
+                
+                // Create an object store to store sessions
+                if (!db.objectStoreNames.contains(objectStoreName)) {
+                    const objectStore = db.createObjectStore(objectStoreName, { keyPath: "id" });
+                    
+                    // Create indexes for searching
+                    objectStore.createIndex("date", "date", { unique: false });
+                }
+                
+                // Migrate data from localStorage if available
+                migrateFromLocalStorage();
+            };
+        }
+
+        // Migrate data from localStorage to IndexedDB
+        function migrateFromLocalStorage() {
+            const savedSessions = localStorage.getItem('evSessions');
+            if (savedSessions) {
+                try {
+                    const sessionsData = JSON.parse(savedSessions);
+                    if (sessionsData && sessionsData.length > 0) {
+                        // Add each session to IndexedDB
+                        const transaction = db.transaction([objectStoreName], "readwrite");
+                        const objectStore = transaction.objectStore(objectStoreName);
+                        
+                        sessionsData.forEach(session => {
+                            objectStore.add(session);
+                        });
+                        
+                        transaction.oncomplete = function() {
+                            console.log("Data migrated from localStorage to IndexedDB");
+                            // Clear localStorage after successful migration
+                            localStorage.removeItem('evSessions');
+                        };
+                    }
+                } catch (e) {
+                    console.error("Error migrating data from localStorage:", e);
+                }
+            }
+            
+            // Migrate global rate
+            const savedGlobalRate = localStorage.getItem('globalRate');
+            if (savedGlobalRate) {
+                globalRate = parseFloat(savedGlobalRate);
+                globalRateInput.value = globalRate;
+                localStorage.removeItem('globalRate');
+            }
+        }
+
+        // Fallback to localStorage if IndexedDB fails
+        function loadFromLocalStorage() {
+            const savedSessions = localStorage.getItem('evSessions');
+            if (savedSessions) {
+                sessions = JSON.parse(savedSessions);
+            }
+            
+            const savedGlobalRate = localStorage.getItem('globalRate');
+            if (savedGlobalRate) {
+                globalRate = parseFloat(savedGlobalRate);
+                globalRateInput.value = globalRate;
+            }
+            
+            renderSessionsList();
+            updateSummary();
+        }
+
+        // Save sessions to IndexedDB
+        function saveSessions() {
+            if (!db) {
+                // Fallback to localStorage if IndexedDB is not available
+                localStorage.setItem('evSessions', JSON.stringify(sessions));
+                return;
+            }
+            
+            const transaction = db.transaction([objectStoreName], "readwrite");
+            const objectStore = transaction.objectStore(objectStoreName);
+            
+            // Clear existing data
+            const clearRequest = objectStore.clear();
+            
+            clearRequest.onsuccess = function() {
+                // Add all sessions
+                sessions.forEach(session => {
+                    objectStore.add(session);
+                });
+            };
+            
+            transaction.oncomplete = function() {
+                console.log("Sessions saved to IndexedDB");
+            };
+            
+            transaction.onerror = function(event) {
+                console.error("Error saving sessions to IndexedDB:", event.target.error);
+                // Fallback to localStorage
+                localStorage.setItem('evSessions', JSON.stringify(sessions));
+            };
+        }
+
+        // Load sessions from IndexedDB
+        function loadSessions() {
+            if (!db) {
+                loadFromLocalStorage();
+                return;
+            }
+            
+            const transaction = db.transaction([objectStoreName], "readonly");
+            const objectStore = transaction.objectStore(objectStoreName);
+            
+            const request = objectStore.getAll();
+            
+            request.onsuccess = function(event) {
+                sessions = event.target.result;
+                renderSessionsList();
+                updateSummary();
+            };
+            
+            request.onerror = function(event) {
+                console.error("Error loading sessions from IndexedDB:", event.target.error);
+                // Fallback to localStorage
+                loadFromLocalStorage();
+            };
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'es' : 'en';
+            updateLanguage();
+            localStorage.setItem('language', currentLang);
+        }
+
+        function updateLanguage() {
+            const t = translations[currentLang];
+            
+            // Update page elements
+            document.getElementById('pageTitle').textContent = t.pageTitle;
+            document.getElementById('pageSubtitle').textContent = t.pageSubtitle;
+            document.getElementById('summaryTitle').textContent = t.summaryTitle;
+            document.getElementById('totalEnergyLabel').textContent = t.totalEnergyLabel;
+            document.getElementById('totalCostLabel').textContent = t.totalCostLabel;
+            document.getElementById('avgCostLabel').textContent = t.avgCostLabel;
+            document.getElementById('dateLabel').textContent = t.dateLabel;
+            document.getElementById('energyLabel').textContent = t.energyLabel;
+            document.getElementById('costMethodLabel').textContent = t.costMethodLabel;
+            document.getElementById('globalCostToggle').textContent = t.globalCostToggle;
+            document.getElementById('customCostToggle').textContent = t.customCostToggle;
+            document.getElementById('rateLabel').textContent = t.rateLabel;
+            document.getElementById('addSessionBtn').textContent = t.addSessionBtn;
+            document.getElementById('globalRateLabel').textContent = t.globalRateLabel;
+            document.getElementById('rateInfoText').textContent = t.rateInfoText;
+            document.getElementById('saveSettingsBtn').textContent = t.saveSettingsBtn;
+            document.getElementById('dataManagementTitle').textContent = t.dataManagementTitle;
+            document.getElementById('exportBtn').textContent = t.exportBtn;
+            document.getElementById('importBtn').textContent = t.importBtn;
+            document.getElementById('dataInfoText').textContent = t.dataInfoText;
+            document.getElementById('sessionsTitle').textContent = t.sessionsTitle;
+            document.getElementById('editModalTitle').textContent = t.editModalTitle;
+            document.getElementById('editDateLabel').textContent = t.editDateLabel;
+            document.getElementById('editEnergyLabel').textContent = t.editEnergyLabel;
+            document.getElementById('editRateLabel').textContent = t.editRateLabel;
+            document.getElementById('cancelEditBtn').textContent = t.cancelEditBtn;
+            document.getElementById('deleteSessionBtn').textContent = t.deleteSessionBtn;
+            document.getElementById('updateSessionBtn').textContent = t.updateSessionBtn;
+            document.getElementById('loadMoreBtn').textContent = t.loadMoreBtn;
+            document.getElementById('menuModalTitle').textContent = t.menuModalTitle;
+            document.getElementById('globalSettingsTitle').textContent = t.globalSettingsTitle;
+            document.getElementById('startOverBtn').textContent = t.startOverBtn;
+            document.querySelector('.home-btn').setAttribute('title', translations[currentLang].homeBtnTooltip);
+            
+            // Update warning message
+            const warningElement = document.getElementById('startOverWarning');
+            if (warningElement) {
+                warningElement.textContent = t.startOverWarning;
+            }
+            
+            // Update error messages
+            energyError.textContent = t.energyError;
+            rateError.textContent = t.rateError;
+            
+            // Update language toggle
+            document.getElementById('currentFlag').textContent = currentLang === 'en' ? '🇺🇸' : '🇪🇸';
+            document.getElementById('currentLang').textContent = currentLang.toUpperCase();
+            
+            // Update HTML lang attribute
+            document.documentElement.lang = currentLang;
+            
+            // Update sessions list
+            renderSessionsList();
+            updateSummary();
+        }
+
+        function setCostMethod(method) {
+            costMethod = method;
+            
+            if (method === 'global') {
+                globalCostToggle.classList.add('active');
+                customCostToggle.classList.remove('active');
+                sessionRateInput.disabled = true;
+                customCostGroup.style.opacity = '0.6';
+            } else {
+                customCostToggle.classList.add('active');
+                globalCostToggle.classList.remove('active');
+                sessionRateInput.disabled = false;
+                customCostGroup.style.opacity = '1';
+            }
+        }
+
+        function updateGlobalRate() {
+            globalRate = parseFloat(globalRateInput.value) || 0;
+            // Save to localStorage as fallback
+            localStorage.setItem('globalRate', globalRate.toString());
+        }
+
+        function saveGlobalSettings() {
+            updateGlobalRate();
+            
+            // Show success feedback
+            const btn = document.getElementById('saveSettingsBtn');
+            const originalText = btn.textContent;
+            btn.textContent = currentLang === 'en' ? 'Saved!' : '¡Guardado!';
+            btn.style.background = '#48bb78';
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = '';
+            }, 1500);
+        }
+
+        function addSession(e) {
+            e.preventDefault();
+            
+            // Hide error messages
+            energyError.style.display = 'none';
+            rateError.style.display = 'none';
+            
+            // Get values
+            const date = sessionDateInput.value;
+            const energy = parseFloat(sessionEnergyInput.value);
+            let rate = globalRate;
+            let cost = 0;
+            
+            // Validate inputs
+            let hasError = false;
+            
+            if (!date) {
+                // Date is required by HTML5 validation
+            }
+            
+            if (!energy || energy <= 0) {
+                energyError.style.display = 'block';
+                hasError = true;
+            }
+            
+            if (costMethod === 'custom') {
+                rate = parseFloat(sessionRateInput.value) || 0;
+                if (rate < 0) {
+                    rateError.style.display = 'block';
+                    hasError = true;
+                }
+            }
+            
+            if (hasError) {
+                return;
+            }
+            
+            // Calculate cost
+            cost = energy * rate;
+            
+            // Create new session
+            const newSession = {
+                id: generateId(),
+                date: date,
+                energy: energy,
+                cost: cost,
+                rate: rate,
+                costMethod: costMethod
+            };
+            
+            // Add to sessions array
+            sessions.push(newSession);
+            
+            // Save to IndexedDB
+            saveSessions();
+            
+            // Reset form
+            sessionDateInput.valueAsDate = new Date();
+            sessionEnergyInput.value = '';
+            sessionRateInput.value = '';
+            
+            // Reset pagination and update UI
+            currentPage = 1;
+            renderSessionsList();
+            updateSummary();
+        }
+
+        function groupSessionsByMonth() {
+            // Sort sessions by date (newest first)
+            const sortedSessions = [...sessions].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // Group sessions by month
+            const monthGroups = {};
+            
+            sortedSessions.forEach(session => {
+                const date = new Date(session.date);
+                const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+                
+                if (!monthGroups[monthKey]) {
+                    monthGroups[monthKey] = {
+                        month: date.getMonth(),
+                        year: date.getFullYear(),
+                        sessions: []
+                    };
+                }
+                
+                monthGroups[monthKey].sessions.push(session);
+            });
+            
+            return monthGroups;
+        }
+
+        function renderSessionsList() {
+            const monthGroups = groupSessionsByMonth();
+            const monthKeys = Object.keys(monthGroups);
+            
+            // Calculate which months to display based on pagination
+            const startIndex = (currentPage - 1) * monthsPerPage;
+            const endIndex = Math.min(startIndex + monthsPerPage, monthKeys.length);
+            displayedMonths = monthKeys.slice(startIndex, endIndex);
+            
+            // Clear the list
+            sessionsList.innerHTML = '';
+            
+            if (sessions.length === 0) {
+                sessionsList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔋</div>
+                        <div id="noSessionsText">${translations[currentLang].noSessionsText}</div>
+                    </div>
+                `;
+                sessionsCount.textContent = '0 sessions';
+                loadMoreContainer.style.display = 'none';
+                return;
+            }
+            
+            // Update sessions count
+            sessionsCount.textContent = `${sessions.length} ${translations[currentLang].sessionsCount}`;
+            
+            // Render each month
+            displayedMonths.forEach(monthKey => {
+                const monthData = monthGroups[monthKey];
+                const monthName = new Date(monthData.year, monthData.month).toLocaleDateString(
+                    currentLang === 'en' ? 'en-US' : 'es-ES', 
+                    { month: 'long', year: 'numeric' }
+                );
+                
+                // Calculate month summary
+                let monthEnergy = 0;
+                let monthCost = 0;
+                
+                monthData.sessions.forEach(session => {
+                    monthEnergy += session.energy;
+                    monthCost += session.cost;
+                });
+                
+                const monthAvgRate = monthEnergy > 0 ? monthCost / monthEnergy : 0;
+                
+                // Create month header
+                const monthHeader = document.createElement('div');
+                monthHeader.className = 'month-header';
+                monthHeader.innerHTML = `
+                    <div class="month-title">${monthName}</div>
+                    <div class="month-summary">
+                        <div class="month-summary-item">
+                            <div class="month-summary-value">${monthEnergy.toFixed(1)}</div>
+                            <div class="month-summary-label">${translations[currentLang].monthEnergyLabel}</div>
+                        </div>
+                        <div class="month-summary-item">
+                            <div class="month-summary-value">$${monthCost.toFixed(2)}</div>
+                            <div class="month-summary-label">${translations[currentLang].monthCostLabel}</div>
+                        </div>
+                        <div class="month-summary-item">
+                            <div class="month-summary-value">$${monthAvgRate.toFixed(2)}</div>
+                            <div class="month-summary-label">${translations[currentLang].monthAvgLabel}</div>
+                        </div>
+                    </div>
+                `;
+                
+                sessionsList.appendChild(monthHeader);
+                
+                // Render sessions for this month
+                monthData.sessions.forEach(session => {
+                    const sessionItem = document.createElement('div');
+                    sessionItem.className = 'session-item';
+                    
+                    const date = new Date(session.date);
+                    const formattedDate = date.toLocaleDateString(
+                        currentLang === 'en' ? 'en-US' : 'es-ES',
+                        { month: 'short', day: 'numeric', year: 'numeric' }
+                    );
+                    
+                    sessionItem.innerHTML = `
+                        <div class="session-header">
+                            <div class="session-date">${formattedDate}</div>
+                            <div class="session-actions">
+                                <button class="btn btn-small" onclick="editSession('${session.id}')">Edit</button>
+                            </div>
+                        </div>
+                        <div class="session-details">
+                            <div class="session-energy">${session.energy} kWh</div>
+                            <div class="session-cost">$${session.cost.toFixed(2)}</div>
+                        </div>
+                        <div class="session-rate">$${session.rate.toFixed(2)}/kWh</div>
+                    `;
+                    
+                    sessionsList.appendChild(sessionItem);
+                });
+            });
+            
+            // Show/hide load more button
+            if (endIndex < monthKeys.length) {
+                loadMoreContainer.style.display = 'block';
+            } else {
+                loadMoreContainer.style.display = 'none';
+            }
+        }
+
+        function loadMoreSessions() {
+            currentPage++;
+            renderSessionsList();
+        }
+
+        function updateSummary() {
+            let totalEnergy = 0;
+            let totalCost = 0;
+            
+            sessions.forEach(session => {
+                totalEnergy += session.energy;
+                totalCost += session.cost;
+            });
+            
+            const avgCost = totalEnergy > 0 ? totalCost / totalEnergy : 0;
+            
+            totalEnergyElement.textContent = totalEnergy.toFixed(1);
+            totalCostElement.textContent = `$${totalCost.toFixed(2)}`;
+            avgCostElement.textContent = `$${avgCost.toFixed(2)}`;
+        }
+
+        function editSession(id) {
+            const session = sessions.find(s => s.id === id);
+            if (!session) return;
+            
+            editingSessionId = id;
+            
+            // Populate form fields
+            editSessionDateInput.value = session.date;
+            editSessionEnergyInput.value = session.energy;
+            editSessionRateInput.value = session.rate;
+            
+            // Update calculated cost
+            updateCalculatedCost();
+            
+            // Show modal
+            editSessionModal.style.display = 'flex';
+        }
+
+        function closeEditSessionModal() {
+            editSessionModal.style.display = 'none';
+            editingSessionId = null;
+        }
+
+        function updateCalculatedCost() {
+            const energy = parseFloat(editSessionEnergyInput.value) || 0;
+            const rate = parseFloat(editSessionRateInput.value) || 0;
+            const cost = energy * rate;
+            
+            calculatedCostDiv.textContent = `Total Cost: $${cost.toFixed(2)}`;
+        }
+
+        function updateSession() {
+            if (!editingSessionId) return;
+            
+            const sessionIndex = sessions.findIndex(s => s.id === editingSessionId);
+            if (sessionIndex === -1) return;
+            
+            // Get values
+            const date = editSessionDateInput.value;
+            const energy = parseFloat(editSessionEnergyInput.value);
+            const rate = parseFloat(editSessionRateInput.value);
+            const cost = energy * rate;
+            
+            // Update session
+            sessions[sessionIndex] = {
+                ...sessions[sessionIndex],
+                date: date,
+                energy: energy,
+                rate: rate,
+                cost: cost
+            };
+            
+            // Save to IndexedDB
+            saveSessions();
+            
+            // Update UI
+            renderSessionsList();
+            updateSummary();
+            
+            // Close modal
+            closeEditSessionModal();
+        }
+
+        function deleteSession() {
+            if (!editingSessionId) return;
+            
+            const t = translations[currentLang];
+            
+            // Show confirmation dialog
+            if (confirm(t.deleteConfirm)) {
+                // Remove session from array
+                sessions = sessions.filter(s => s.id !== editingSessionId);
+                
+                // Save to IndexedDB
+                saveSessions();
+                
+                // Update UI
+                renderSessionsList();
+                updateSummary();
+                
+                // Close modal
+                closeEditSessionModal();
+            }
+        }
+
+        function openMenu() {
+            menuModal.style.display = 'flex';
+        }
+
+        function closeMenu() {
+            menuModal.style.display = 'none';
+        }
+
+        function exportData() {
+            const data = {
+                sessions: sessions,
+                globalRate: globalRate,
+                exportDate: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `ev-charging-data-${new Date().toISOString().slice(0, 10)}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            const t = translations[currentLang];
+            showNotification(t.exportSuccess);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (data.sessions && Array.isArray(data.sessions)) {
+                        sessions = data.sessions;
+                        
+                        if (data.globalRate !== undefined) {
+                            globalRate = data.globalRate;
+                            globalRateInput.value = globalRate;
+                        }
+                        
+                        // Save to IndexedDB
+                        saveSessions();
+                        
+                        // Reset pagination and update UI
+                        currentPage = 1;
+                        renderSessionsList();
+                        updateSummary();
+                        
+                        const t = translations[currentLang];
+                        showNotification(t.importSuccess);
+                    } else {
+                        throw new Error('Invalid data format');
+                    }
+                } catch (error) {
+                    console.error('Import error:', error);
+                    const t = translations[currentLang];
+                    showNotification(t.importError, true);
+                }
+            };
+            
+            reader.readAsText(file);
+            
+            // Reset file input
+            event.target.value = '';
+        }
+
+        function startOver() {
+            const t = translations[currentLang];
+            
+            // Show confirmation dialog
+            if (confirm(t.startOverConfirm)) {
+                // Clear sessions array
+                sessions = [];
+                
+                // Clear IndexedDB
+                if (db) {
+                    const transaction = db.transaction([objectStoreName], "readwrite");
+                    const objectStore = transaction.objectStore(objectStoreName);
+                    const clearRequest = objectStore.clear();
+                    
+                    clearRequest.onsuccess = function() {
+                        console.log("All sessions deleted from IndexedDB");
+                        // Reset pagination and update UI
+                        currentPage = 1;
+                        renderSessionsList();
+                        updateSummary();
+                        showNotification(t.startOverSuccess);
+                    };
+                    
+                    clearRequest.onerror = function(event) {
+                        console.error("Error deleting sessions from IndexedDB:", event.target.error);
+                        // Fallback to localStorage
+                        localStorage.removeItem('evSessions');
+                        // Reset pagination and update UI
+                        currentPage = 1;
+                        renderSessionsList();
+                        updateSummary();
+                        showNotification(t.startOverSuccess);
+                    };
+                } else {
+                    // Fallback to localStorage
+                    localStorage.removeItem('evSessions');
+                    // Reset pagination and update UI
+                    currentPage = 1;
+                    renderSessionsList();
+                    updateSummary();
+                    showNotification(t.startOverSuccess);
+                }
+            }
+        }
+
+        function showNotification(message, isError = false) {
+            notification.textContent = message;
+            notification.className = 'notification show';
+            
+            if (isError) {
+                notification.classList.add('error');
+            }
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load saved language preference
+            const savedLang = localStorage.getItem('language');
+            if (savedLang && (savedLang === 'en' || savedLang === 'es')) {
+                currentLang = savedLang;
+            }
+            
+            // Always call updateLanguage to set the initial state
+            updateLanguage();
+            
+            // Initialize IndexedDB
+            initIndexedDB();
+            
+            // Check if running as standalone app
+            if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+                document.documentElement.classList.add('standalone');
+            }
+        });
+
+        function goHome() {
+            window.location.href = './index.html';
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target === menuModal) {
+                closeMenu();
+            }
+            if (event.target === editSessionModal) {
+                closeEditSessionModal();
+            }
+        };
+    </script>
+</body>
+</html>

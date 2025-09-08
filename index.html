@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="EV Calc">
+    <meta name="apple-mobile-web-app-title" content="EV Utilities">
 
     <!-- Solid color for Safari's top bar (light/dark aware) -->
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#667eea">
@@ -14,12 +14,12 @@
     <!-- PWA basics -->
     <link rel="manifest" href="./manifest.webmanifest">
     <meta name="theme-color" content="#667eea">
-    <title>EV Charging Time Calculator</title>
+    <title>EV Utilities Hub</title>
     
     <!-- iOS Home Screen -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="EV Calc">
+    <meta name="apple-mobile-web-app-title" content="EV Utilities">
     <link rel="apple-touch-icon" sizes="180x180" href="./icons/ev-180.png">
     <link rel="apple-touch-icon" sizes="152x152" href="./icons/ev-152.png">
 
@@ -105,352 +105,99 @@
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             padding: 40px;
-            max-width: 500px;
+            max-width: 600px;
             width: 100%;
+            text-align: center;
         }
 
         h1 {
             color: #333;
             text-align: center;
-            margin-bottom: 10px;
-            font-size: 28px;
+            margin-bottom: 15px;
+            font-size: 32px;
         }
 
         .subtitle {
             text-align: center;
             color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            color: #555;
-            font-weight: 500;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        input[type="number"], input[type="text"], select {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
+            margin-bottom: 40px;
             font-size: 16px;
-            transition: all 0.3s ease;
-            background: #f8f9fa;
         }
 
-        input[type="number"]:focus, input[type="text"]:focus, select:focus {
-            outline: none;
-            border-color: #667eea;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .input-group {
+        .utilities-container {
             display: flex;
-            align-items: center;
-            gap: 10px;
+            flex-direction: column;
+            gap: 25px;
         }
 
-        .input-group input, .input-group select {
-            flex: 1;
-        }
-
-        .unit {
-            color: #666;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .percentage-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 5px;
-        }
-
-        .btn:hover {
-            background: #5a67d8;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn-secondary {
-            background: #e0e0e0;
-            color: #333;
-        }
-
-        .btn-secondary:hover {
-            background: #d0d0d0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-danger {
-            background: #e53e3e;
-        }
-
-        .btn-danger:hover {
-            background: #c53030;
-            box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
-        }
-
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-
-        .result-box {
+        .utility-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 18px;
+            padding: 30px;
+            text-decoration: none;
             color: white;
-            padding: 25px;
-            border-radius: 15px;
-            margin-top: 30px;
-            text-align: center;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.5s ease;
-        }
-
-        .result-box.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .result-title {
-            font-size: 16px;
-            margin-bottom: 10px;
-            opacity: 0.9;
-        }
-
-        .result-time {
-            font-size: 36px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .result-details {
-            font-size: 14px;
-            opacity: 0.8;
-        }
-
-        .presets {
-            margin-top: 30px;
-            padding-top: 30px;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .presets h3 {
-            color: #555;
-            font-size: 16px;
-            margin-bottom: 15px;
-        }
-
-        .preset-buttons {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .preset-btn {
-            background: #f0f0f0;
-            border: 1px solid #e0e0e0;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
             transition: all 0.3s ease;
-            text-align: center;
-        }
-
-        .preset-btn:hover {
-            background: #e8e8e8;
-            border-color: #d0d0d0;
-        }
-
-        .error-message {
-            color: #e53e3e;
-            font-size: 12px;
-            margin-top: 5px;
-            display: none;
-        }
-
-        .info-box {
-            background: #f0f7ff;
-            border-left: 4px solid #667eea;
-            padding: 12px 16px;
-            border-radius: 0 8px 8px 0;
-            margin-top: 5px;
-            font-size: 13px;
-            color: #555;
-        }
-
-        .efficiency-info {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-top: 5px;
-        }
-
-        .efficiency-value {
-            font-weight: 600;
-            color: #667eea;
-        }
-
-        .toggle-container {
-            display: flex;
-            background: #f0f0f0;
-            border-radius: 10px;
+            position: relative;
             overflow: hidden;
-            margin-bottom: 5px;
         }
 
-        .toggle-option {
-            flex: 1;
-            padding: 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            font-size: 14px;
+        .utility-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
         }
 
-        .toggle-option.active {
-            background: #667eea;
-            color: white;
-        }
-
-        .vehicle-manager {
-            margin-bottom: 20px;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
+        .utility-card::before {
+            content: '';
+            position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="3" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="2" fill="rgba(255,255,255,0.1)"/></svg>');
+            opacity: 0.3;
         }
 
-        .modal-content {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .modal-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #999;
-        }
-
-        .modal-close:hover {
-            color: #333;
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .vehicle-management-list {
-            max-height: 300px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-        }
-
-        .vehicle-management-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 15px;
-            border-bottom: 1px solid #f0f0f0;
-            transition: background 0.2s;
-        }
-
-        .vehicle-management-item:last-child {
-            border-bottom: none;
-        }
-
-        .vehicle-management-item:hover {
-            background: #f8f9fa;
-        }
-
-        .vehicle-info {
-            flex: 1;
-        }
-
-        .vehicle-name {
-            font-weight: 500;
-            margin-bottom: 2px;
-        }
-
-        .vehicle-battery {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .vehicle-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 30px 0;
-            color: #999;
-        }
-
-        .empty-state-icon {
+        .utility-icon {
             font-size: 48px;
-            margin-bottom: 10px;
-            opacity: 0.5;
+            margin-right: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .utility-content {
+            flex: 1;
+            position: relative;
+            z-index: 1;
+            text-align: left;
+        }
+
+        .utility-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .utility-description {
+            font-size: 16px;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .utility-arrow {
+            font-size: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
         }
 
         @media (max-width: 480px) {
@@ -459,22 +206,33 @@
             }
 
             h1 {
-                font-size: 24px;
+                font-size: 28px;
             }
 
-            .preset-buttons {
-                grid-template-columns: 1fr;
+            .subtitle {
+                font-size: 15px;
+                margin-bottom: 30px;
             }
 
-            .lang-toggle {
-                top: 15px;
+            .utility-card {
+                flex-direction: column;
+                text-align: center;
+                padding: 25px 20px;
+            }
+
+            .utility-icon {
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+
+            .utility-content {
+                text-align: center;
+            }
+
+            .utility-arrow {
+                position: absolute;
+                bottom: 15px;
                 right: 15px;
-                padding: 6px 12px;
-                font-size: 13px;
-            }
-
-            .lang-toggle .flag {
-                font-size: 14px;
             }
         }
     </style>
@@ -486,144 +244,31 @@
     </button>
 
     <div class="container">
-        <h1 id="pageTitle">⚡ EV Charging Time Calculator</h1>
-        <p class="subtitle" id="pageSubtitle">Calculate how long it will take to charge your electric vehicle</p>
+        <h1 id="pageTitle">⚡ EV Utilities Hub</h1>
+        <p class="subtitle" id="pageSubtitle">Tools for electric vehicle owners</p>
 
-        <div class="vehicle-manager">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <label id="vehicleLabel">Select Vehicle</label>
-                <button class="btn btn-small" id="manageVehiclesBtn" onclick="showVehicleManagementModal()">Manage Vehicles</button>
-            </div>
-            <select id="vehicleSelect" onchange="selectVehicle()">
-                <option value="">-- Select Vehicle --</option>
-            </select>
+        <div class="utilities-container">
+            <a href="charging-sessions.html" class="utility-card">
+                <div class="utility-icon">📊</div>
+                <div class="utility-content">
+                    <h2 class="utility-title" id="trackerTitle">Charging Session Tracker</h2>
+                    <p class="utility-description" id="trackerDesc">Track your charging sessions and energy consumption</p>
+                </div>
+                <div class="utility-arrow">→</div>
+            </a>
+
+            <a href="charging-calculator.html" class="utility-card">
+                <div class="utility-icon">⏱️</div>
+                <div class="utility-content">
+                    <h2 class="utility-title" id="calculatorTitle">Charging Time Calculator</h2>
+                    <p class="utility-description" id="calculatorDesc">Calculate how long it will take to charge your electric vehicle</p>
+                </div>
+                <div class="utility-arrow">→</div>
+            </a>
         </div>
 
-        <form id="chargingForm">
-            <div class="form-group">
-                <label for="batterySize" id="batteryLabel">Battery Size</label>
-                <div class="input-group">
-                    <input type="number" id="batterySize" step="0.1" min="1" max="200" value="60" required>
-                    <span class="unit">kWh</span>
-                </div>
-                <div class="error-message" id="batteryError">Please enter a valid battery size</div>
-            </div>
-
-            <div class="form-group">
-                <label id="chargeLevelsLabel">Charge Levels</label>
-                <div class="percentage-group">
-                    <div>
-                        <label for="currentCharge" id="currentLabel" style="font-size: 12px; margin-bottom: 5px;">Current</label>
-                        <div class="input-group">
-                            <input type="number" id="currentCharge" step="1" min="0" max="100" value="20" required>
-                            <span class="unit">%</span>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="targetCharge" id="targetLabel" style="font-size: 12px; margin-bottom: 5px;">Target</label>
-                        <div class="input-group">
-                            <input type="number" id="targetCharge" step="1" min="1" max="100" value="80" required>
-                            <span class="unit">%</span>
-                        </div>
-                        <button type="button" class="btn" id="setTo100Btn" onclick="setTargetTo100()">Set to 100%</button>
-                    </div>
-                </div>
-                <div class="error-message" id="chargeError">Target charge must be higher than current charge</div>
-            </div>
-
-            <div class="form-group">
-                <label id="chargingTypeLabel">Charging Type</label>
-                <div class="toggle-container">
-                    <div class="toggle-option active" id="acToggle" onclick="setChargingType('ac')">AC Charging</div>
-                    <div class="toggle-option" id="dcToggle" onclick="setChargingType('dc')">DC Charging</div>
-                </div>
-                <div class="info-box" id="chargingTypeInfo">
-                    AC charging (home/work) has efficiency losses (85-90%). DC charging (public stations) has minimal losses (95-98%).
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="chargeRate" id="chargeRateLabel">Charging Rate</label>
-                <div class="input-group">
-                    <input type="number" id="chargeRate" step="0.1" min="0.1" max="350" value="7.4" required>
-                    <span class="unit" id="chargeRateUnit">kW (supplied)</span>
-                </div>
-                <div class="error-message" id="rateError">Please enter a valid charging rate</div>
-            </div>
-
-            <div class="form-group">
-                <label for="efficiency" id="efficiencyLabel">Charging Efficiency</label>
-                <div class="input-group">
-                    <input type="number" id="efficiency" step="1" min="70" max="98" value="85" required>
-                    <span class="unit">%</span>
-                </div>
-                <div class="info-box">
-                    <div class="efficiency-info">
-                        <span id="effectivePowerLabel">Effective power:</span> <span class="efficiency-value" id="effectivePower">6.3 kW</span>
-                    </div>
-                    <span id="efficiencyInfoText">This accounts for energy lost during charging. Automatically adjusted based on charging type.</span>
-                </div>
-            </div>
-        </form>
-
-        <div class="result-box" id="resultBox">
-            <div class="result-title" id="resultTitle">Estimated Charging Time</div>
-            <div class="result-time" id="resultTime">--:--</div>
-            <div class="result-details" id="resultDetails">-- kWh needed</div>
-        </div>
-
-        <div class="presets">
-            <h3 id="presetsTitle">Quick Presets</h3>
-            <div class="preset-buttons">
-                <button class="preset-btn" id="preset1" onclick="setPreset(40, 7.4, 'ac')">Home Charger<br><small>@ 7.4 kW AC</small></button>
-                <button class="preset-btn" id="preset2" onclick="setPreset(60, 50, 'dc')">Fast Charger<br><small>@ 50 kW DC</small></button>
-                <button class="preset-btn" id="preset3" onclick="setPreset(75, 150, 'dc')">Rapid Charger<br><small>@ 150 kW DC</small></button>
-                <button class="preset-btn" id="preset4" onclick="setPreset(100, 250, 'dc')">Ultra Fast<br><small>@ 250 kW DC</small></button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Vehicle Management Modal -->
-    <div class="modal" id="vehicleManagementModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title" id="managementModalTitle">Manage Vehicles</div>
-                <button class="modal-close" onclick="closeVehicleManagementModal()">&times;</button>
-            </div>
-            
-            <div class="vehicle-management-list" id="vehicleManagementList">
-                <!-- Vehicle list will be populated here -->
-            </div>
-            
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeVehicleManagementModal()" id="closeManagementBtn">Close</button>
-                <button class="btn" onclick="showAddVehicleModal()" id="addNewVehicleBtn">Add New Vehicle</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add/Edit Vehicle Modal -->
-    <div class="modal" id="vehicleModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title" id="modalTitle">Add New Vehicle</div>
-                <button class="modal-close" onclick="closeVehicleModal()">&times;</button>
-            </div>
-            <div class="form-group">
-                <label for="vehicleNameInput" id="vehicleNameLabel">Vehicle Name</label>
-                <input type="text" id="vehicleNameInput" placeholder="e.g., Tesla Model 3">
-            </div>
-            <div class="form-group">
-                <label for="vehicleBatteryInput" id="vehicleBatteryLabel">Battery Size</label>
-                <div class="input-group">
-                    <input type="number" id="vehicleBatteryInput" step="0.1" min="1" max="200" placeholder="e.g., 75">
-                    <span class="unit">kWh</span>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeVehicleModal()" id="cancelBtn">Cancel</button>
-                <button class="btn" onclick="saveVehicle()" id="saveVehicleBtn">Save Vehicle</button>
-            </div>
+        <div class="footer" id="footerText">
+            Designed for EV owners by EV owners
         </div>
     </div>
 
@@ -631,130 +276,27 @@
         // Translations
         const translations = {
             en: {
-                pageTitle: "⚡ EV Charging Time Calculator",
-                pageSubtitle: "Calculate how long it will take to charge your electric vehicle",
-                vehicleLabel: "Select Vehicle",
-                batteryLabel: "Battery Size",
-                chargeLevelsLabel: "Charge Levels",
-                currentLabel: "Current",
-                targetLabel: "Target",
-                setTo100Btn: "Set to 100%",
-                chargingTypeLabel: "Charging Type",
-                acToggle: "AC Charging",
-                dcToggle: "DC Charging",
-                chargingTypeInfo: "AC charging (home/work) has efficiency losses (85-90%). DC charging (public stations) has minimal losses (95-98%).",
-                chargeRateLabel: "Charging Rate",
-                chargeRateUnit: "kW (supplied)",
-                efficiencyLabel: "Charging Efficiency",
-                effectivePowerLabel: "Effective power:",
-                efficiencyInfoText: "This accounts for energy lost during charging. Automatically adjusted based on charging type.",
-                resultTitle: "Estimated Charging Time",
-                resultDetails: "kWh needed",
-                presetsTitle: "Quick Presets",
-                preset1: "Home Charger<br><small>@ 7.4 kW AC</small>",
-                preset2: "Fast Charger<br><small>@ 50 kW DC</small>",
-                preset3: "Rapid Charger<br><small>@ 150 kW DC</small>",
-                preset4: "Ultra Fast<br><small>@ 250 kW DC</small>",
-                batteryError: "Please enter a valid battery size",
-                chargeError: "Target charge must be higher than current charge",
-                rateError: "Please enter a valid charging rate",
-                manageVehiclesBtn: "Manage Vehicles",
-                managementModalTitle: "Manage Vehicles",
-                addNewVehicleBtn: "Add New Vehicle",
-                closeManagementBtn: "Close",
-                modalTitle: "Add New Vehicle",
-                vehicleNameLabel: "Vehicle Name",
-                vehicleBatteryLabel: "Battery Size",
-                cancelBtn: "Cancel",
-                saveVehicleBtn: "Save Vehicle",
-                editVehicleBtn: "Edit",
-                deleteVehicleBtn: "Delete",
-                noVehiclesText: "No vehicles added yet",
-                addFirstVehicleText: "Add your first vehicle to get started"
+                pageTitle: "⚡ EV Utilities Hub",
+                pageSubtitle: "Tools for electric vehicle owners",
+                trackerTitle: "Charging Session Tracker",
+                trackerDesc: "Track your charging sessions and energy consumption",
+                calculatorTitle: "Charging Time Calculator",
+                calculatorDesc: "Calculate how long it will take to charge your electric vehicle",
+                footerText: "Designed for EV owners by EV owners"
             },
             es: {
-                pageTitle: "⚡ Calculadora de Tiempo de Carga para EV",
-                pageSubtitle: "Calcula cuánto tiempo tomará cargar tu vehículo eléctrico",
-                vehicleLabel: "Seleccionar Vehículo",
-                batteryLabel: "Tamaño de la Batería",
-                chargeLevelsLabel: "Niveles de Carga",
-                currentLabel: "Actual",
-                targetLabel: "Objetivo",
-                setTo100Btn: "Establecer en 100%",
-                chargingTypeLabel: "Tipo de Carga",
-                acToggle: "Carga AC",
-                dcToggle: "Carga DC",
-                chargingTypeInfo: "La carga AC (hogar/trabajo) tiene pérdidas de eficiencia (85-90%). La carga DC (estaciones públicas) tiene pérdidas mínimas (95-98%).",
-                chargeRateLabel: "Velocidad de Carga",
-                chargeRateUnit: "kW (suministrado)",
-                efficiencyLabel: "Eficiencia de Carga",
-                effectivePowerLabel: "Potencia efectiva:",
-                efficiencyInfoText: "Esto tiene en cuenta la energía perdida durante la carga. Se ajusta automáticamente según el tipo de carga.",
-                resultTitle: "Tiempo Estimado de Carga",
-                resultDetails: "kWh necesarios",
-                presetsTitle: "Configuraciones Rápidas",
-                preset1: "Cargador Doméstico<br><small>@ 7.4 kW AC</small>",
-                preset2: "Cargador Rápido<br><small>@ 50 kW DC</small>",
-                preset3: "Cargador Ultra Rápido<br><small>@ 150 kW DC</small>",
-                preset4: "Cargador Ultra Rápido Plus<br><small>@ 250 kW DC</small>",
-                batteryError: "Por favor ingrese un tamaño de batería válido",
-                chargeError: "La carga objetivo debe ser mayor que la carga actual",
-                rateError: "Por favor ingrese una velocidad de carga válida",
-                manageVehiclesBtn: "Administrar Vehículos",
-                managementModalTitle: "Administrar Vehículos",
-                addNewVehicleBtn: "Agregar Nuevo Vehículo",
-                closeManagementBtn: "Cerrar",
-                modalTitle: "Agregar Nuevo Vehículo",
-                vehicleNameLabel: "Nombre del Vehículo",
-                vehicleBatteryLabel: "Tamaño de la Batería",
-                cancelBtn: "Cancelar",
-                saveVehicleBtn: "Guardar Vehículo",
-                editVehicleBtn: "Editar",
-                deleteVehicleBtn: "Eliminar",
-                noVehiclesText: "No se han agregado vehículos aún",
-                addFirstVehicleText: "Agrega tu primer vehículo para comenzar"
+                pageTitle: "⚡ Centro de Utilidades EV",
+                pageSubtitle: "Herramientas para propietarios de vehículos eléctricos",
+                trackerTitle: "Seguimiento de Sesiones de Carga",
+                trackerDesc: "Registra tus sesiones de carga y consumo de energía",
+                calculatorTitle: "Calculadora de Tiempo de Carga",
+                calculatorDesc: "Calcula cuánto tiempo tomará cargar tu vehículo eléctrico",
+                footerText: "Diseñado por y para propietarios de EV"
             }
         };
 
         // Current language
         let currentLang = 'en';
-        
-        // Vehicle management
-        let vehicles = [];
-        let selectedVehicleId = null;
-        let editingVehicleId = null;
-
-        // Get all input elements
-        const batterySizeInput = document.getElementById('batterySize');
-        const currentChargeInput = document.getElementById('currentCharge');
-        const targetChargeInput = document.getElementById('targetCharge');
-        const chargeRateInput = document.getElementById('chargeRate');
-        const efficiencyInput = document.getElementById('efficiency');
-        const effectivePowerSpan = document.getElementById('effectivePower');
-        const resultBox = document.getElementById('resultBox');
-        const resultTime = document.getElementById('resultTime');
-        const resultDetails = document.getElementById('resultDetails');
-        const acToggle = document.getElementById('acToggle');
-        const dcToggle = document.getElementById('dcToggle');
-        const vehicleSelect = document.getElementById('vehicleSelect');
-        const vehicleManagementModal = document.getElementById('vehicleManagementModal');
-        const vehicleManagementList = document.getElementById('vehicleManagementList');
-        const vehicleModal = document.getElementById('vehicleModal');
-        const vehicleNameInput = document.getElementById('vehicleNameInput');
-        const vehicleBatteryInput = document.getElementById('vehicleBatteryInput');
-
-        // Error message elements
-        const batteryError = document.getElementById('batteryError');
-        const chargeError = document.getElementById('chargeError');
-        const rateError = document.getElementById('rateError');
-
-        // Current charging type
-        let currentChargingType = 'ac';
-
-        // Add event listeners for real-time calculation
-        [batterySizeInput, currentChargeInput, targetChargeInput, chargeRateInput, efficiencyInput].forEach(input => {
-            input.addEventListener('input', calculateChargingTime);
-        });
 
         function toggleLanguage() {
             currentLang = currentLang === 'en' ? 'es' : 'en';
@@ -768,45 +310,11 @@
             // Update page elements
             document.getElementById('pageTitle').textContent = t.pageTitle;
             document.getElementById('pageSubtitle').textContent = t.pageSubtitle;
-            document.getElementById('vehicleLabel').textContent = t.vehicleLabel;
-            document.getElementById('batteryLabel').textContent = t.batteryLabel;
-            document.getElementById('chargeLevelsLabel').textContent = t.chargeLevelsLabel;
-            document.getElementById('currentLabel').textContent = t.currentLabel;
-            document.getElementById('targetLabel').textContent = t.targetLabel;
-            document.getElementById('setTo100Btn').textContent = t.setTo100Btn;
-            document.getElementById('chargingTypeLabel').textContent = t.chargingTypeLabel;
-            document.getElementById('acToggle').textContent = t.acToggle;
-            document.getElementById('dcToggle').textContent = t.dcToggle;
-            document.getElementById('chargingTypeInfo').textContent = t.chargingTypeInfo;
-            document.getElementById('chargeRateLabel').textContent = t.chargeRateLabel;
-            document.getElementById('chargeRateUnit').textContent = t.chargeRateUnit;
-            document.getElementById('efficiencyLabel').textContent = t.efficiencyLabel;
-            document.getElementById('effectivePowerLabel').textContent = t.effectivePowerLabel;
-            document.getElementById('efficiencyInfoText').textContent = t.efficiencyInfoText;
-            document.getElementById('resultTitle').textContent = t.resultTitle;
-            document.getElementById('presetsTitle').textContent = t.presetsTitle;
-            
-            // Update error messages
-            batteryError.textContent = t.batteryError;
-            chargeError.textContent = t.chargeError;
-            rateError.textContent = t.rateError;
-            
-            // Update presets
-            document.getElementById('preset1').innerHTML = t.preset1;
-            document.getElementById('preset2').innerHTML = t.preset2;
-            document.getElementById('preset3').innerHTML = t.preset3;
-            document.getElementById('preset4').innerHTML = t.preset4;
-            
-            // Update vehicle management elements
-            document.getElementById('manageVehiclesBtn').textContent = t.manageVehiclesBtn;
-            document.getElementById('managementModalTitle').textContent = t.managementModalTitle;
-            document.getElementById('addNewVehicleBtn').textContent = t.addNewVehicleBtn;
-            document.getElementById('closeManagementBtn').textContent = t.closeManagementBtn;
-            document.getElementById('modalTitle').textContent = t.modalTitle;
-            document.getElementById('vehicleNameLabel').textContent = t.vehicleNameLabel;
-            document.getElementById('vehicleBatteryLabel').textContent = t.vehicleBatteryLabel;
-            document.getElementById('cancelBtn').textContent = t.cancelBtn;
-            document.getElementById('saveVehicleBtn').textContent = t.saveVehicleBtn;
+            document.getElementById('trackerTitle').textContent = t.trackerTitle;
+            document.getElementById('trackerDesc').textContent = t.trackerDesc;
+            document.getElementById('calculatorTitle').textContent = t.calculatorTitle;
+            document.getElementById('calculatorDesc').textContent = t.calculatorDesc;
+            document.getElementById('footerText').textContent = t.footerText;
             
             // Update language toggle
             document.getElementById('currentFlag').textContent = currentLang === 'en' ? '🇺🇸' : '🇪🇸';
@@ -814,311 +322,6 @@
             
             // Update HTML lang attribute
             document.documentElement.lang = currentLang;
-            
-            // Update vehicle management list
-            renderVehicleManagementList();
-            
-            // Recalculate to update result details
-            calculateChargingTime();
-        }
-
-        function setChargingType(type) {
-            currentChargingType = type;
-            
-            if (type === 'ac') {
-                acToggle.classList.add('active');
-                dcToggle.classList.remove('active');
-                efficiencyInput.value = 85; // Default AC efficiency
-            } else {
-                dcToggle.classList.add('active');
-                acToggle.classList.remove('active');
-                efficiencyInput.value = 97; // Default DC efficiency
-            }
-            
-            calculateChargingTime();
-        }
-
-        function calculateChargingTime() {
-            // Hide all error messages
-            [batteryError, chargeError, rateError].forEach(error => error.style.display = 'none');
-
-            // Get values
-            const batterySize = parseFloat(batterySizeInput.value);
-            const currentCharge = parseFloat(currentChargeInput.value);
-            const targetCharge = parseFloat(targetChargeInput.value);
-            const chargeRate = parseFloat(chargeRateInput.value);
-            const efficiency = parseFloat(efficiencyInput.value) / 100;
-
-            // Update effective power display
-            const effectivePower = chargeRate * efficiency;
-            effectivePowerSpan.textContent = `${effectivePower.toFixed(1)} kW`;
-
-            // Validate inputs
-            let hasError = false;
-
-            if (!batterySize || batterySize < 1 || batterySize > 200) {
-                batteryError.style.display = 'block';
-                hasError = true;
-            }
-
-            if (!currentCharge || currentCharge < 0 || currentCharge > 100) {
-                currentChargeInput.value = Math.max(0, Math.min(100, currentCharge || 0));
-            }
-
-            if (!targetCharge || targetCharge < 1 || targetCharge > 100) {
-                targetChargeInput.value = Math.max(1, Math.min(100, targetCharge || 100));
-            }
-
-            if (targetCharge <= currentCharge) {
-                chargeError.style.display = 'block';
-                hasError = true;
-            }
-
-            if (!chargeRate || chargeRate < 0.1 || chargeRate > 350) {
-                rateError.style.display = 'block';
-                hasError = true;
-            }
-
-            if (hasError) {
-                resultBox.classList.remove('show');
-                return;
-            }
-
-            // Calculate energy needed
-            const energyNeeded = ((targetCharge - currentCharge) / 100) * batterySize;
-
-            // Calculate time in hours using effective power (after efficiency losses)
-            const timeInHours = energyNeeded / effectivePower;
-
-            // Convert to hours and minutes
-            const hours = Math.floor(timeInHours);
-            const minutes = Math.round((timeInHours - hours) * 60);
-
-            // Format the result
-            let timeString = '';
-            if (hours > 0) {
-                timeString = `${hours}h ${minutes}m`;
-            } else {
-                timeString = `${minutes}m`;
-            }
-
-            // Update the result
-            resultTime.textContent = timeString;
-            const t = translations[currentLang];
-            resultDetails.textContent = `${energyNeeded.toFixed(1)} ${t.resultDetails}`;
-            resultBox.classList.add('show');
-        }
-
-        function setTargetTo100() {
-            targetChargeInput.value = 100;
-            calculateChargingTime();
-        }
-
-        function setPreset(battery, rate, type) {
-            // batterySizeInput.value = battery;
-            chargeRateInput.value = rate;
-            setChargingType(type);
-            calculateChargingTime();
-        }
-
-        // Vehicle management functions
-        function loadVehicles() {
-            const savedVehicles = localStorage.getItem('evVehicles');
-            if (savedVehicles) {
-                vehicles = JSON.parse(savedVehicles);
-            } else {
-                // Add some default vehicles if none exist
-                vehicles = [
-                    { id: generateId(), name: "Tesla Model 3", batterySize: 75 },
-                    { id: generateId(), name: "Nissan Leaf", batterySize: 40 },
-                    { id: generateId(), name: "Ford Mustang Mach-E", batterySize: 98 }
-                ];
-                saveVehicles();
-            }
-            
-            const savedSelectedVehicleId = localStorage.getItem('selectedVehicleId');
-            if (savedSelectedVehicleId) {
-                selectedVehicleId = savedSelectedVehicleId;
-                const vehicle = vehicles.find(v => v.id === selectedVehicleId);
-                if (vehicle) {
-                    batterySizeInput.value = vehicle.batterySize;
-                }
-            }
-            
-            renderVehicleSelect();
-        }
-
-        function saveVehicles() {
-            localStorage.setItem('evVehicles', JSON.stringify(vehicles));
-        }
-
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        }
-
-        function renderVehicleSelect() {
-            vehicleSelect.innerHTML = '<option value="">-- Select Vehicle --</option>';
-            
-            vehicles.forEach(vehicle => {
-                const option = document.createElement('option');
-                option.value = vehicle.id;
-                option.textContent = `${vehicle.name} (${vehicle.batterySize} kWh)`;
-                if (vehicle.id === selectedVehicleId) {
-                    option.selected = true;
-                }
-                vehicleSelect.appendChild(option);
-            });
-        }
-
-        function renderVehicleManagementList() {
-            if (vehicles.length === 0) {
-                vehicleManagementList.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">🚗</div>
-                        <div>${translations[currentLang].noVehiclesText}</div>
-                        <div style="font-size: 12px; margin-top: 5px;">${translations[currentLang].addFirstVehicleText}</div>
-                    </div>
-                `;
-                return;
-            }
-            
-            vehicleManagementList.innerHTML = '';
-            
-            vehicles.forEach(vehicle => {
-                const item = document.createElement('div');
-                item.className = 'vehicle-management-item';
-                
-                item.innerHTML = `
-                    <div class="vehicle-info">
-                        <div class="vehicle-name">${vehicle.name}</div>
-                        <div class="vehicle-battery">${vehicle.batterySize} kWh</div>
-                    </div>
-                    <div class="vehicle-actions">
-                        <button class="btn btn-small btn-secondary" onclick="editVehicle('${vehicle.id}')">${translations[currentLang].editVehicleBtn}</button>
-                        <button class="btn btn-small btn-danger" onclick="deleteVehicle('${vehicle.id}')">${translations[currentLang].deleteVehicleBtn}</button>
-                    </div>
-                `;
-                
-                vehicleManagementList.appendChild(item);
-            });
-        }
-
-        function selectVehicle() {
-            const vehicleId = vehicleSelect.value;
-            if (vehicleId) {
-                selectVehicleById(vehicleId);
-            } else {
-                selectedVehicleId = null;
-                localStorage.removeItem('selectedVehicleId');
-            }
-        }
-
-        function selectVehicleById(vehicleId) {
-            selectedVehicleId = vehicleId;
-            localStorage.setItem('selectedVehicleId', vehicleId);
-            
-            const vehicle = vehicles.find(v => v.id === vehicleId);
-            if (vehicle) {
-                batterySizeInput.value = vehicle.batterySize;
-            }
-            
-            renderVehicleSelect();
-            calculateChargingTime();
-        }
-
-        function showVehicleManagementModal() {
-            renderVehicleManagementList();
-            vehicleManagementModal.style.display = 'flex';
-        }
-
-        function closeVehicleManagementModal() {
-            vehicleManagementModal.style.display = 'none';
-        }
-
-        function showAddVehicleModal() {
-            editingVehicleId = null;
-            vehicleNameInput.value = '';
-            vehicleBatteryInput.value = '';
-            document.getElementById('modalTitle').textContent = translations[currentLang].modalTitle;
-            vehicleModal.style.display = 'flex';
-            closeVehicleManagementModal();
-        }
-
-        function editVehicle(vehicleId) {
-            const vehicle = vehicles.find(v => v.id === vehicleId);
-            if (vehicle) {
-                editingVehicleId = vehicleId;
-                vehicleNameInput.value = vehicle.name;
-                vehicleBatteryInput.value = vehicle.batterySize;
-                document.getElementById('modalTitle').textContent = translations[currentLang].modalTitle;
-                vehicleModal.style.display = 'flex';
-                closeVehicleManagementModal();
-            }
-        }
-
-        function closeVehicleModal() {
-            vehicleModal.style.display = 'none';
-        }
-
-        function saveVehicle() {
-            const name = vehicleNameInput.value.trim();
-            const batterySize = parseFloat(vehicleBatteryInput.value);
-            
-            if (!name) {
-                alert(currentLang === 'en' ? 'Please enter a vehicle name' : 'Por favor ingrese un nombre de vehículo');
-                return;
-            }
-            
-            if (!batterySize || batterySize < 1 || batterySize > 200) {
-                alert(currentLang === 'en' ? 'Please enter a valid battery size' : 'Por favor ingrese un tamaño de batería válido');
-                return;
-            }
-            
-            if (editingVehicleId) {
-                // Update existing vehicle
-                const vehicleIndex = vehicles.findIndex(v => v.id === editingVehicleId);
-                if (vehicleIndex !== -1) {
-                    vehicles[vehicleIndex] = {
-                        id: editingVehicleId,
-                        name: name,
-                        batterySize: batterySize
-                    };
-                    
-                    // If this is the selected vehicle, update the battery size field
-                    if (editingVehicleId === selectedVehicleId) {
-                        batterySizeInput.value = batterySize;
-                    }
-                }
-            } else {
-                // Add new vehicle
-                const newVehicle = {
-                    id: generateId(),
-                    name: name,
-                    batterySize: batterySize
-                };
-                vehicles.push(newVehicle);
-            }
-            
-            saveVehicles();
-            renderVehicleSelect();
-            closeVehicleModal();
-            calculateChargingTime();
-        }
-
-        function deleteVehicle(vehicleId) {
-            if (confirm(currentLang === 'en' ? 'Are you sure you want to delete this vehicle?' : '¿Está seguro de que desea eliminar este vehículo?')) {
-                vehicles = vehicles.filter(v => v.id !== vehicleId);
-                
-                if (selectedVehicleId === vehicleId) {
-                    selectedVehicleId = null;
-                    localStorage.removeItem('selectedVehicleId');
-                }
-                
-                saveVehicles();
-                renderVehicleSelect();
-                renderVehicleManagementList();
-                calculateChargingTime();
-            }
         }
 
         // Initialize
@@ -1129,18 +332,7 @@
                 currentLang = savedLang;
                 updateLanguage();
             }
-            
-            // Load vehicles
-            loadVehicles();
-            
-            // Initial calculation
-            calculateChargingTime();
         });
-
-        // Register a minimal service worker (needed for install prompts/offline polish outside iOS)
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js').catch(()=>{});
-        }
 
         // Apply a class when running as an installed app (iOS: window.navigator.standalone)
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
