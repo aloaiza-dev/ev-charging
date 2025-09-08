@@ -86,13 +86,28 @@
         }
 
         /* Optional: only when installed (standalone) */
-        html.standalone .lang-toggle {
-            top: calc(env(safe-area-inset-top) + 10px);
+        html.standalone .top-controls {
+            top: calc(env(safe-area-inset-top) + 15px);
+        }
+
+        /* Better handling for iOS standalone mode */
+        html.standalone body {
+            padding-top: calc(30px + env(safe-area-inset-top));
+        }
+
+        /* Adjust container padding in standalone mode */
+        html.standalone .container {
+            margin-top: 10px;
         }
 
         /* Optional: tiny screens */
         @media (max-height: 700px) {
-            .top-controls { top: calc(env(safe-area-inset-top) + 10px); }
+            html.standalone .top-controls { 
+                top: calc(env(safe-area-inset-top) + 10px); 
+            }
+            html.standalone body {
+                padding-top: calc(25px + env(safe-area-inset-top));
+            }
         }
 
         .container {
@@ -503,6 +518,45 @@
             display: flex;
             gap: 10px;
             z-index: 1000;
+        }
+
+        /* iOS specific adjustments */
+        @supports (-webkit-touch-callout: none) {
+            body {
+                padding-top: calc(25px + env(safe-area-inset-top));
+            }
+            
+            .top-controls, .lang-toggle {
+                top: calc(15px + env(safe-area-inset-top));
+            }
+            
+            html.standalone body {
+                padding-top: calc(35px + env(safe-area-inset-top));
+            }
+            
+            html.standalone .top-controls, 
+            html.standalone .lang-toggle {
+                top: calc(20px + env(safe-area-inset-top));
+            }
+            
+            @media (max-height: 700px) {
+                body {
+                    padding-top: calc(20px + env(safe-area-inset-top));
+                }
+                
+                .top-controls, .lang-toggle {
+                    top: calc(10px + env(safe-area-inset-top));
+                }
+                
+                html.standalone body {
+                    padding-top: calc(30px + env(safe-area-inset-top));
+                }
+                
+                html.standalone .top-controls, 
+                html.standalone .lang-toggle {
+                    top: calc(15px + env(safe-area-inset-top));
+                }
+            }
         }
     </style>
 </head>
