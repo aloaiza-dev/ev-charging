@@ -920,14 +920,16 @@
                 <div class="menu-section-title" id="dataManagementTitle">Data Management</div>
                 
                 <div class="btn-group">
-                    <button type="button" class="btn btn-secondary" id="exportBtn" onclick="exportData()">Export Data</button>
-                    <button type="button" class="btn btn-secondary" id="importBtn" onclick="document.getElementById('importFile').click()">Import Data</button>
+                    <button type="button" class="btn btn-secondary" id="exportJsonBtn" onclick="exportData()">Export JSON</button>
+                    <button type="button" class="btn btn-secondary" id="exportCsvBtn" onclick="exportToCSV()">Export CSV</button>
                 </div>
+                
+                <button type="button" class="btn btn-secondary" id="importBtn" onclick="document.getElementById('importFile').click()" style="width: 100%; margin-top: 10px;">Import Data</button>
                 
                 <input type="file" id="importFile" class="file-input" accept=".json" onchange="importData(event)">
                 
                 <div class="info-box" id="dataInfoText">
-                    Export your data to back it up or import previously exported data.
+                    Export your data to back it up or import previously exported data. CSV format can be opened in spreadsheet applications.
                 </div>
                 
                 <div style="margin-top: 20px;">
@@ -938,7 +940,6 @@
                     This will permanently delete all your charging sessions. Consider exporting your data first if you want to keep a backup.
                 </div>
             </div>
-
             
         </div>
     </div>
@@ -1003,7 +1004,11 @@
                 rateInfoText: "This rate will be used when \"Use Global Rate\" is selected for a charging session.",
                 saveSettingsBtn: "Save Settings",
                 dataManagementTitle: "Data Management",
-                exportBtn: "Export Data",
+                exportJsonBtn: "Export JSON",
+                exportCsvBtn: "Export CSV",
+                exportCsvSuccess: "Data exported to CSV successfully!",
+                exportCsvError: "Error exporting data to CSV",
+                noSessionsToExport: "No charging sessions to export",
                 importBtn: "Import Data",
                 dataInfoText: "Export your data to back it up or import previously exported data.",
                 sessionsTitle: "Charging Sessions",
@@ -1053,7 +1058,11 @@
                 rateInfoText: "Esta tarifa se utilizará cuando se seleccione \"Usar Tarifa Global\" para una sesión de carga.",
                 saveSettingsBtn: "Guardar Configuración",
                 dataManagementTitle: "Gestión de Datos",
-                exportBtn: "Exportar Datos",
+                exportJsonBtn: "Exportar JSON",
+                exportCsvBtn: "Exportar CSV",
+                exportCsvSuccess: "¡Datos exportados a CSV exitosamente!",
+                exportCsvError: "Error al exportar datos a CSV",
+                noSessionsToExport: "No hay sesiones de carga para exportar",
                 importBtn: "Importar Datos",
                 dataInfoText: "Exporta tus datos para respaldarlos o importa datos previamente exportados.",
                 sessionsTitle: "Sesiones de Carga",
@@ -1358,7 +1367,8 @@
             document.getElementById('rateInfoText').textContent = t.rateInfoText;
             document.getElementById('saveSettingsBtn').textContent = t.saveSettingsBtn;
             document.getElementById('dataManagementTitle').textContent = t.dataManagementTitle;
-            document.getElementById('exportBtn').textContent = t.exportBtn;
+            document.getElementById('exportJsonBtn').textContent = t.exportJsonBtn;
+            document.getElementById('exportCsvBtn').textContent = t.exportCsvBtn;
             document.getElementById('importBtn').textContent = t.importBtn;
             document.getElementById('dataInfoText').textContent = t.dataInfoText;
             document.getElementById('sessionsTitle').textContent = t.sessionsTitle;
@@ -1892,6 +1902,80 @@
             
             const t = translations[currentLang];
             showNotification(t.exportSuccess);
+        }
+
+        function exportToCSV() {
+            if (sessions.length === 0) {
+                showNotification(translations[currentLang].noSessionsToExport, true);
+                return;
+            }
+            
+            try {
+                // Create CSV header
+                let csvContent = "Date,Energy (kWh),Rate ($/kWh),Cost ($)\n";
+                
+                // Calculate totals
+                let totalEnergy = 0;
+                let totalCost = 0;
+                
+                // Add each session as a row
+                sessions.forEach(session => {
+                    totalEnergy += parseFloat(session.energy);
+                    totalCost += parseFloat(session.cost);
+                    
+                    const row = [
+                        `"${session.date}"`,
+                        session.energy,
+                        session.rate,
+                        session.cost.toFixed(2)
+                    ].join(',');
+                    
+                    csvContent += row + "\n";
+                });
+                
+                // Add summary row
+                const avgRate = totalCost / totalEnergy;
+                const summaryRow = [
+                    `"TOTAL"`,
+                    totalEnergy.toFixed(2),
+                    avgRate.toFixed(4),
+                    totalCost.toFixed(2)
+                ].join(',');
+                
+                csvContent += summaryRow + "\n";
+                
+                // Create a blob with the CSV content
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                
+                // Create a download link
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                
+                // Set the file name with current date
+                const today = new Date();
+                const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+                link.setAttribute("href", url);
+                link.setAttribute("download", `ev_charging_sessions_${dateStr}.csv`);
+                
+                // Trigger the download
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Show success notification
+                showNotification(translations[currentLang].exportCsvSuccess);
+            } catch (error) {
+                console.error("Error exporting to CSV:", error);
+                showNotification(translations[currentLang].exportCsvError, true);
+            }
+        }
+
+        function getTodayDateString() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
 
         function importData(event) {
