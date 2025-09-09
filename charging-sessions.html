@@ -1731,13 +1731,18 @@
                 monthData.sessions.forEach(session => {
                     const sessionItem = document.createElement('div');
                     sessionItem.className = 'session-item';
-                    
-                    const date = new Date(session.date);
-                    const formattedDate = date.toLocaleDateString(
+
+                    const dateParts = session.date.split('-');
+                    const year = parseInt(dateParts[0], 10);
+                    const month = parseInt(dateParts[1], 10) - 1; // Months are zero-based
+                    const day = parseInt(dateParts[2], 10);
+
+                    const sessionDate = new Date(year, month, day);
+                    const formattedDate = sessionDate.toLocaleDateString(
                         currentLang === 'en' ? 'en-US' : 'es-ES',
                         { month: 'short', day: 'numeric', year: 'numeric' }
                     );
-                    
+
                     sessionItem.innerHTML = `
                         <div class="session-header">
                             <div class="session-date">${formattedDate}</div>
